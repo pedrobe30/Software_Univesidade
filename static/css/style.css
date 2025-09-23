@@ -1,0 +1,119 @@
+/* Neo Academia — Mobile-first, dark, navy + coral + cyan palette */
+/* Design choices: spacious layout, soft shadows, clear CTA hierarchy, subtle motion */
+
+:root{
+  --bg:#071022;
+  --panel: rgba(255,255,255,0.03);
+  --muted:#9aa6b2;
+  --text:#eaf4ff;
+  --accent1:#4dd0e1; /* cyan */
+  --accent2:#ff6b6b; /* coral */
+  --glass: rgba(255,255,255,0.03);
+  --card-radius:14px;
+  --shadow: 0 12px 40px rgba(2,6,23,0.6);
+  --maxwidth:1200px;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  color-scheme: dark;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:
+    radial-gradient(800px 400px at 10% 10%, rgba(77,208,225,0.06), transparent 5%),
+    linear-gradient(180deg,var(--bg), #030312 70%);
+  color:var(--text); -webkit-font-smoothing:antialiased;padding:18px;
+  display:flex;justify-content:center;
+}
+.neo-app{width:100%;max-width:var(--maxwidth)}
+
+/* Top */
+.neo-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.neo-brand{display:flex;align-items:center;gap:12px}
+.logo-blob{width:56px;height:56px;border-radius:12px;box-shadow:0 10px 30px rgba(77,208,225,0.06)}
+.brand-text .title{font-weight:700}
+.brand-text .subtitle{color:var(--muted);font-size:0.9rem}
+
+/* actions */
+.neo-actions{display:flex;align-items:center;gap:8px}
+.search-wrap{position:relative;display:flex;align-items:center}
+.search{background:var(--glass);border:1px solid rgba(255,255,255,0.03);padding:10px 36px 10px 12px;border-radius:10px;color:var(--text);min-width:160px}
+.search-ic{position:absolute;right:8px;width:18px;height:18px;opacity:.7}
+
+/* Buttons */
+.btn{border:0;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;background:transparent;color:inherit}
+.btn.big{padding:12px 16px}
+.btn.tiny{padding:6px 8px;font-size:.85rem}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);backdrop-filter: blur(6px)}
+.btn.primary{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#041022}
+.btn.danger{background:linear-gradient(90deg,#ff8a8a,#ff6b6b);color:#100101}
+
+/* layout main */
+.neo-main{display:grid;grid-template-columns:1fr;gap:12px}
+.neo-left, .neo-right{display:flex;flex-direction:column;gap:12px}
+
+/* head panel */
+.head-panel{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.panel-stats{display:flex;gap:12px}
+.panel-stats div{text-align:right}
+.panel-stats span{display:block;font-weight:800;font-size:1.05rem}
+
+/* grid users */
+.users-grid{display:grid;grid-template-columns:1fr;gap:12px;max-height:68vh;overflow:auto;padding-right:6px}
+
+/* user card */
+.user-card{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border:1px solid rgba(255,255,255,0.02);
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.user-card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+.u-left{display:flex;align-items:center;gap:12px}
+.avatar{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#041022}
+.u-meta{display:flex;flex-direction:column}
+.u-meta .name{font-weight:700}
+.u-meta .meta{color:var(--muted);font-size:.92rem}
+
+/* small controls */
+.u-actions{display:flex;gap:8px;align-items:center}
+
+/* right column form */
+.form-card{padding:16px;background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.008));border-radius:var(--card-radius);box-shadow:var(--shadow)}
+.form .group{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.form input, .form textarea{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:8px;color:var(--text);outline:none}
+.req{color:var(--accent2);font-weight:700}
+
+/* dropzone */
+.dropzone{position:relative;border:1px dashed rgba(255,255,255,0.04);padding:14px;border-radius:10px;text-align:center;cursor:pointer;color:var(--muted)}
+.dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+/* file meta */
+.filemeta{display:flex;justify-content:space-between;align-items:center;gap:8px}
+
+/* form actions */
+.form-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+/* panels small */
+.card{background:var(--panel);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
+.help-card ul{margin:8px 0 0 16px;padding:0}
+
+/* footer */
+.neo-foot{text-align:center;margin-top:12px;color:var(--muted)}
+
+/* toast */
+.toast{position:fixed;right:18px;bottom:18px;z-index:2000;display:flex;flex-direction:column;gap:8px}
+.toast .t{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#041022;padding:10px 14px;border-radius:10px;box-shadow:0 6px 20px rgba(2,6,23,0.6);font-weight:700}
+
+/* modal */
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:linear-gradient(rgba(2,6,23,0.6), rgba(2,6,23,0.6));z-index:1500}
+.modal[aria-hidden="false"]{display:flex}
+.modal-card{width:calc(100% - 40px);max-width:720px;background:var(--panel);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+
+/* skeleton */
+.skeleton{height:86px;border-radius:12px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.02));animation:shimmer 1.2s infinite}
+@keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
+
+/* responsive */
+@media(min-width:1000px){
+  .neo-main{grid-template-columns: 1fr 420px;align-items:start}
+  .users-grid{grid-template-columns: 1fr}
+}

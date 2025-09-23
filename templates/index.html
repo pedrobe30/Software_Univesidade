@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Projeto Acadêmico — Neo Academia</title>
+
+  <!-- Fonte -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../static/css/style.css">
+</head>
+<body>
+  <div class="neo-app">
+    <header class="neo-top">
+      <div class="neo-brand">
+        <svg class="logo-blob" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="g1" x1="0" x2="1">
+              <stop offset="0" stop-color="#4dd0e1"/>
+              <stop offset="1" stop-color="#ff6b6b"/>
+            </linearGradient>
+          </defs>
+          <path fill="url(#g1)" d="M60 4c12 0 22 4 30 10s16 18 16 32-6 26-14 36S75 100 60 116 32 104 18 90 4 56 4 42 24 4 60 4z"/>
+        </svg>
+        <div class="brand-text">
+          <div class="title">Neo Academia</div>
+          <div class="subtitle">Protótipo: Gestão de notas</div>
+        </div>
+      </div>
+
+      <div class="neo-actions">
+        <label class="search-wrap" title="Pesquisar">
+          <input id="search" class="search" placeholder="Pesquisar usuários ou notas..." />
+          <svg class="search-ic" viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.471 6.471 0 0 0 1.57-5.34C15.36 5.01 12.35 2 8.68 2S2 5.01 2 8.39 5.01 14.77 8.68 14.77c1.61 0 3.09-.55 4.24-1.47l.27.28v.79l5 4.99L20.49 19l-4.99-5zM8.68 13a4.6 4.6 0 0 1-4.6-4.6c0-2.54 2.07-4.6 4.6-4.6s4.6 2.06 4.6 4.6A4.6 4.6 0 0 1 8.68 13z"/></svg>
+        </label>
+
+        <button id="themeToggle" class="btn ghost" aria-pressed="false">Tema</button>
+        <a href="#form" class="btn primary">Nova nota</a>
+      </div>
+    </header>
+
+    <main class="neo-main">
+      <!-- Left: lista / feed -->
+      <section class="neo-left">
+        <div class="panel head-panel">
+          <div>
+            <h2>Usuários</h2>
+            <p class="muted small">Organizados por último registro</p>
+          </div>
+          <div class="panel-stats">
+            <div><span id="countUsers">—</span><small>Usuários</small></div>
+            <div><span id="countNotas">—</span><small>Notas</small></div>
+          </div>
+        </div>
+
+        <div id="usersList" class="users-grid">
+          <!-- skeleton & items renderizados via JS -->
+        </div>
+      </section>
+
+      <!-- Right: formulário -->
+      <aside id="form" class="neo-right">
+        <div class="panel card form-card">
+          <div class="form-header">
+            <h3 id="formTitle">Criar nova nota</h3>
+            <small class="muted">Preencha os campos — opção de anexar documento</small>
+          </div>
+
+          <form id="userForm" class="form" autocomplete="off">
+            <div class="group">
+              <label>Nome do usuário <span class="req">*</span></label>
+              <input id="usuario" name="usuario" required placeholder="Ex: Mariana Costa" />
+            </div>
+
+            <div class="group">
+              <label>Título da nota</label>
+              <input id="nota" name="nota" placeholder="Ex: Prova 1 — LP" />
+            </div>
+
+            <div class="group">
+              <label>Conteúdo</label>
+              <textarea id="conteudo" name="conteudo" rows="6" placeholder="Observações, resumo, correções..."></textarea>
+            </div>
+
+            <div class="group filegroup">
+              <label>Documento (arraste ou selecione)</label>
+              <div id="dropzone" class="dropzone">Arraste o arquivo aqui ou clique para selecionar
+                <input id="document" name="document" type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.txt" />
+              </div>
+              <div class="filemeta"><span id="fileName" class="muted">Nenhum arquivo</span> <button id="clearFile" type="button" class="btn ghost tiny">Limpar</button></div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn primary big">Salvar</button>
+              <button id="btnUpdate" type="button" class="btn ghost">Atualizar</button>
+              <button id="btnDelete" type="button" class="btn danger">Excluir</button>
+            </div>
+
+            <div id="formMsg" class="form-msg" aria-live="polite"></div>
+          </form>
+        </div>
+
+        <div class="panel card help-card">
+          <h4>UX notes</h4>
+          <ul class="muted small">
+            <li>Selecione um usuário para preencher o formulário automaticamente.</li>
+            <li>Ao excluir, todas as notas do usuário serão removidas.</li>
+            <li>Use arquivos para anexar evidências (PDF/imagem).</li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="neo-foot muted small">
+      Neo Academia • Protótipo para apresentação • UI/UX refresh
+    </footer>
+  </div>
+
+  <!-- Toasts -->
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <!-- Modal preview -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <button id="modalClose" class="btn ghost tiny modal-close" aria-label="Fechar">×</button>
+      <h4 id="modalTitle"></h4>
+      <div id="modalBody"></div>
+      <div id="modalFooter" class="muted small"></div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
