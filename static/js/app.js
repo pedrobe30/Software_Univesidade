@@ -1,285 +1,380 @@
-/* Neo Academia — app.js
-   Compatível com:
-     GET  /api/users
-     POST /api/create
-     PUT  /api/update
-     DELETE /api/delete
-   Funcionalidades UX adicionadas:
-     - skeleton loading
-     - toast notifications
-     - drag & drop file zone
-     - melhor seleção / preview / modal
-     - validação simples
-*/
-
+// app.js — integração frontend ↔ backend
+// Mantém o layout e estilos já existentes no seu HTML.
+// Atenção: ajuste BASE_URL se seu backend não estiver em http://127.0.0.1:5000
 document.addEventListener('DOMContentLoaded', () => {
-  // elements
-  const usersList = document.getElementById('usersList');
-  const countUsers = document.getElementById('countUsers');
-  const countNotas = document.getElementById('countNotas');
-  const searchInput = document.getElementById('search');
+    const BASE_URL = "http://127.0.0.1:5000";
 
-  const form = document.getElementById('userForm');
-  const usuarioInput = document.getElementById('usuario');
-  const notaInput = document.getElementById('nota');
-  const conteudoInput = document.getElementById('conteudo');
-  const documentInput = document.getElementById('document');
-  const dropzone = document.getElementById('dropzone');
-  const fileName = document.getElementById('fileName');
-  const clearFile = document.getElementById('clearFile');
-  const formMsg = document.getElementById('formMsg');
-  const btnUpdate = document.getElementById('btnUpdate');
-  const btnDelete = document.getElementById('btnDelete');
+    // SELETORES PRINCIPAIS (devem existir no seu index.html)
+    const paginaAutenticacao = document.getElementById('pagina-autenticacao');
+    const authWrapper = document.getElementById('auth-wrapper'); // overlay wrapper
+    const paginaListagem = document.getElementById('pagina-listagem');
 
-  const toastWrap = document.getElementById('toast');
-  const modal = document.getElementById('modal');
-  const modalTitle = document.getElementById('modalTitle');
-  const modalBody = document.getElementById('modalBody');
-  const modalFooter = document.getElementById('modalFooter');
-  const modalClose = document.getElementById('modalClose');
+    const formLogin = document.getElementById('form-login');
+    const formCadastro = document.getElementById('form-cadastro');
 
-  let state = { users: [], selected: null };
+    const signUpButton = document.getElementById('signUp');
+    const signInButton = document.getElementById('signIn');
 
-  // small helpers
-  function toast(msg, time = 3500) {
-    const el = document.createElement('div');
-    el.className = 't';
-    el.textContent = msg;
-    toastWrap.appendChild(el);
-    setTimeout(() => el.style.opacity = '0.0', time - 300);
-    setTimeout(() => el.remove(), time);
-  }
+    const btnVoltarLogin = document.getElementById('btn-voltar-login');
 
-  function setFormMsg(text, tone) {
-    formMsg.textContent = text || '';
-    if (tone === 'error') formMsg.style.color = '#ff9b9b';
-    else if (tone === 'success') formMsg.style.color = '#baf3d6';
-    else formMsg.style.color = '';
-  }
+    const corpoTabelaUsuarios = document.getElementById('corpo-tabela-usuarios');
+    const listaVaziaMsg = document.getElementById('lista-vazia-mensagem');
+    const inputBusca = document.getElementById('input-busca');
 
-  function showSkeletons(n = 3) {
-    usersList.innerHTML = '';
-    for (let i = 0; i < n; i++) {
-      const s = document.createElement('div');
-      s.className = 'skeleton';
-      s.style.height = '86px';
-      usersList.appendChild(s);
-    }
-  }
+    const modalEdicao = document.getElementById('modal-edicao');
+    const formEdicaoContainer = document.getElementById('form-edicao');
 
-  // fetch users
-  async function fetchUsers() {
-    showSkeletons(4);
-    try {
-      const res = await fetch('/api/users');
-      const j = await res.json();
-      if (j.success) {
-        state.users = Array.isArray(j.data) ? j.data : j.data || [];
-        renderUsers();
-      } else {
-        usersList.innerHTML = `<div class="card muted">Erro: ${j.error}</div>`;
-        toast('Erro ao buscar usuários', 2500);
-      }
-    } catch (e) {
-      usersList.innerHTML = `<div class="card muted">Erro de conexão</div>`;
-      toast('Erro de conexão', 2500);
-      console.error(e);
-    }
-  }
+    // estado
+    let usuarios = [];
+    let usuarioParaExcluirId = null;
+    let usuarioParaEditarId = null;
 
-  // render list
-  function renderUsers() {
-    usersList.innerHTML = '';
-    const q = (searchInput.value || '').toLowerCase().trim();
-    const filtered = state.users.filter(u => {
-      if (!q) return true;
-      if ((u.usuario || '').toLowerCase().includes(q)) return true;
-      if (u.notas && u.notas.some(n => (n.titulo || '').toLowerCase().includes(q) || (n.conteudo || '').toLowerCase().includes(q))) return true;
-      return false;
-    });
-
-    countUsers.textContent = filtered.length;
-    let nTotal = 0;
-    filtered.forEach(u => nTotal += (u.notas || []).length);
-    countNotas.textContent = nTotal;
-
-    if (filtered.length === 0) {
-      usersList.innerHTML = `<div class="card muted">Nenhum usuário encontrado</div>`;
-      return;
+    // ===========================
+    // utilitários / validação
+    // ===========================
+    function formatarInputNumerico(e) {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
     }
 
-    filtered.forEach(u => {
-      const card = document.createElement('div');
-      card.className = 'user-card';
-
-      const left = document.createElement('div'); left.className = 'u-left';
-      const avatar = document.createElement('div'); avatar.className = 'avatar';
-      avatar.textContent = (u.usuario || 'U').split(' ').map(t => t[0]).slice(0,2).join('').toUpperCase();
-      const meta = document.createElement('div'); meta.className = 'u-meta';
-      const name = document.createElement('div'); name.className = 'name'; name.textContent = u.usuario || '—';
-      const sub = document.createElement('div'); sub.className = 'meta';
-      const latest = (u.notas && u.notas.length) ? u.notas[u.notas.length - 1] : null;
-      sub.textContent = latest ? `${latest.titulo} · ${u.notas.length} nota(s)` : `Sem notas · ${u.notas.length || 0}`;
-      meta.appendChild(name); meta.appendChild(sub);
-      left.appendChild(avatar); left.appendChild(meta);
-
-      const actions = document.createElement('div'); actions.className = 'u-actions';
-      const btnView = document.createElement('button'); btnView.className = 'btn ghost tiny'; btnView.textContent = 'Ver';
-      btnView.onclick = () => openNoteModal(u);
-      const btnSelect = document.createElement('button'); btnSelect.className = 'btn primary tiny'; btnSelect.textContent = 'Selecionar';
-      btnSelect.onclick = () => {
-        state.selected = u;
-        usuarioInput.value = u.usuario || '';
-        notaInput.value = latest ? (latest.titulo || '') : '';
-        conteudoInput.value = latest ? (latest.conteudo || '') : '';
-        fileName.textContent = extractDocument(latest ? latest.conteudo : '') || 'Nenhum arquivo';
-        setFormMsg(`Selecionado: ${u.usuario}`, 'success');
-        location.hash = '#form';
-      };
-      const btnDelete = document.createElement('button'); btnDelete.className = 'btn danger tiny'; btnDelete.textContent = 'Excluir';
-      btnDelete.onclick = () => {
-        if (confirm(`Excluir usuário "${u.usuario}" e todas as notas?`)) handleDelete(u);
-      };
-
-      actions.appendChild(btnView); actions.appendChild(btnSelect); actions.appendChild(btnDelete);
-
-      card.appendChild(left); card.appendChild(actions);
-      usersList.appendChild(card);
-    });
-  }
-
-  // parse document pattern if stored in content as "Documento: filename"
-  function extractDocument(text){
-    if (!text) return null;
-    const m = text.match(/Documento:\s*([^\s]+)/i);
-    return m ? m[1] : null;
-  }
-
-  // modal
-  function openNoteModal(user) {
-    const latest = (user.notas && user.notas.length) ? user.notas[user.notas.length - 1] : null;
-    modalTitle.textContent = user.usuario + (latest ? ` — ${latest.titulo}` : '');
-    modalBody.innerHTML = '';
-    if (!latest) {
-      modalBody.innerHTML = `<div class="muted">Nenhuma nota.</div>`;
-      modalFooter.innerHTML = `<div class="muted">Criado em: ${user.criado_em || '—'}</div>`;
-    } else {
-      const p = document.createElement('pre'); p.style.whiteSpace='pre-wrap'; p.textContent = latest.conteudo || '';
-      modalBody.appendChild(p);
-      const doc = extractDocument(latest.conteudo);
-      modalFooter.innerHTML = '';
-      if (doc) {
-        const a = document.createElement('a'); a.href = `/uploads/${doc}`; a.target='_blank'; a.className='btn ghost'; a.textContent='Abrir documento';
-        modalFooter.appendChild(a);
-      } else {
-        modalFooter.innerHTML = `<div class="muted small">Sem documento</div>`;
-      }
+    function mostrarErro(input, mensagem) {
+        if (!input) return;
+        const formGrupo = input.closest('.form-grupo') || input.parentElement;
+        const errorDiv = formGrupo && formGrupo.querySelector('.error-message');
+        if (errorDiv) {
+            errorDiv.textContent = mensagem;
+            errorDiv.style.display = 'block';
+        } else {
+            // fallback: console
+            console.warn('Error element not found for', input);
+        }
+        input.setAttribute('aria-invalid', 'true');
     }
-    modal.setAttribute('aria-hidden','false');
-  }
-  modalClose && modalClose.addEventListener('click', () => modal.setAttribute('aria-hidden','true'));
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.setAttribute('aria-hidden','true'); });
 
-  // create
-  form.addEventListener('submit', async (ev) => {
-    ev.preventDefault();
-    setFormMsg('Enviando...');
-    const usuario = usuarioInput.value.trim();
-    const titulo = notaInput.value.trim();
-    const conteudo = conteudoInput.value.trim();
+    function limparErro(input) {
+        if (!input) return;
+        const formGrupo = input.closest('.form-grupo') || input.parentElement;
+        const errorDiv = formGrupo && formGrupo.querySelector('.error-message');
+        if (errorDiv) errorDiv.style.display = 'none';
+        input.removeAttribute('aria-invalid');
+    }
 
-    if (!usuario) { setFormMsg('Nome é obrigatório', 'error'); return; }
+    function limparTodosErros(form) {
+        if (!form) return;
+        const inputs = form.querySelectorAll('input[required]');
+        inputs.forEach(limparErro);
+        const general = form.querySelector('.general-error');
+        if (general) {
+            general.style.display = 'none';
+            general.textContent = '';
+        }
+    }
 
-    try {
-      let res;
-      if (documentInput.files && documentInput.files.length > 0) {
-        const fd = new FormData();
-        fd.append('usuario', usuario);
-        fd.append('nota', titulo);
-        fd.append('conteudo', conteudo);
-        fd.append('document', documentInput.files[0]);
-        res = await fetch('/api/create', { method: 'POST', body: fd });
-      } else {
-        res = await fetch('/api/create', {
-          method:'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usuario, nota: titulo, conteudo })
+    function validarFormulario(form) {
+        let valido = true;
+        if (!form) return false;
+        limparTodosErros(form);
+        const inputs = form.querySelectorAll('input[required]');
+        inputs.forEach(input => {
+            const val = (input.value || '').trim();
+            if (!val) {
+                const label = input.getAttribute('placeholder') || input.name || input.id;
+                mostrarErro(input, `O campo ${label.replace('*','').trim()} é obrigatório.`);
+                valido = false;
+            } else if (input.type === 'email' && !/\S+@\S+\.\S+/.test(val)) {
+                mostrarErro(input, 'Por favor, insira um email válido.');
+                valido = false;
+            }
         });
-      }
-      const j = await res.json();
-      if (j.success) {
-        setFormMsg('Salvo com sucesso', 'success');
-        toast('Salvo ✔');
-        form.reset(); fileName.textContent = 'Nenhum arquivo'; state.selected = null;
-        await fetchUsers();
-      } else {
-        setFormMsg(`Erro: ${j.error}`, 'error'); toast('Erro ao salvar', 2500);
-      }
-    } catch (e) {
-      setFormMsg('Erro de conexão', 'error'); toast('Erro de conexão', 2200);
-      console.error(e);
+
+        // validação de senhas no cadastro
+        if (form.id === 'form-cadastro') {
+            const senha = form.querySelector('#senha');
+            const confirmar = form.querySelector('#confirmar-senha');
+            if (senha && confirmar && senha.value && confirmar.value && senha.value !== confirmar.value) {
+                mostrarErro(confirmar, 'As senhas não coincidem.');
+                valido = false;
+            }
+            if (senha && senha.value && senha.value.length < 6) {
+                mostrarErro(senha, 'A senha deve ter pelo menos 6 caracteres.');
+                valido = false;
+            }
+        }
+
+        return valido;
     }
-  });
 
-  // update: atualiza nota mais recente do usuário
-  btnUpdate.addEventListener('click', async () => {
-    const usuario = usuarioInput.value.trim();
-    if (!usuario) return alert('Preencha o nome do usuário para atualizar.');
-    const titulo = notaInput.value.trim();
-    const conteudo = conteudoInput.value.trim();
-    try {
-      const res = await fetch('/api/update', {
-        method:'PUT',
-        headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify({ usuario, nota: titulo, conteudo })
-      });
-      const j = await res.json();
-      if (j.success) { toast('Atualizado'); setFormMsg('Atualizado', 'success'); await fetchUsers(); }
-      else { setFormMsg(`Erro: ${j.error}`, 'error'); toast('Erro ao atualizar'); }
-    } catch (e) { setFormMsg('Erro', 'error'); toast('Erro de conexão'); }
-  });
-
-  // delete
-  async function handleDelete(user) {
-    try {
-      const payload = { usuario: user.usuario || null, id: user.id || null };
-      const res = await fetch('/api/delete', {
-        method:'DELETE',
-        headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const j = await res.json();
-      if (j.success) { toast('Deletado'); setFormMsg('Usuário deletado', 'success'); await fetchUsers(); }
-      else { setFormMsg(`Erro: ${j.error}`, 'error'); toast('Erro ao deletar'); }
-    } catch (e) { setFormMsg('Erro ao deletar', 'error'); toast('Erro de conexão'); console.error(e); }
-  }
-
-  btnDelete.addEventListener('click', async () => {
-    const usuario = usuarioInput.value.trim();
-    if (!usuario) return alert('Preencha o nome do usuário para excluir.');
-    if (!confirm(`Confirmar exclusão de: ${usuario}?`)) return;
-    const user = state.users.find(u => (u.usuario||'') === usuario);
-    if (user) await handleDelete(user); else await handleDelete({ usuario });
-  });
-
-  // dropzone and file handling
-  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag'); });
-  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
-  dropzone.addEventListener('drop', (e) => {
-    e.preventDefault(); dropzone.classList.remove('drag');
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      documentInput.files = e.dataTransfer.files;
-      fileName.textContent = documentInput.files[0].name;
+    // ===========================
+    // navegação (mostrar/ocultar telas)
+    // ===========================
+    function navegarPara(pagina) {
+        if (pagina === 'autenticacao') {
+            paginaAutenticacao.classList.remove('hidden');
+            paginaListagem.classList.add('hidden');
+        } else { // 'listagem'
+            paginaAutenticacao.classList.add('hidden');
+            paginaListagem.classList.remove('hidden');
+            // atualiza lista toda vez que mostra a listagem
+            fetchErenderizarUsuarios();
+        }
     }
-  });
-  documentInput.addEventListener('change', () => {
-    fileName.textContent = (documentInput.files && documentInput.files[0]) ? documentInput.files[0].name : 'Nenhum arquivo';
-  });
-  clearFile.addEventListener('click', () => { documentInput.value = ''; fileName.textContent = 'Nenhum arquivo'; });
 
-  // search input
-  searchInput.addEventListener('input', () => renderUsers());
+    function mostrarFormCadastro(show = true) {
+        if (!authWrapper) return;
+        if (show) authWrapper.classList.add('right-panel-active');
+        else authWrapper.classList.remove('right-panel-active');
+    }
 
-  // initial load
-  fetchUsers();
+    function controlarModal(selector, abrir = true) {
+        const modal = document.querySelector(selector);
+        if (!modal) return;
+        if (abrir) modal.classList.add('ativo'); else modal.classList.remove('ativo');
+    }
+
+    // ===========================
+    // chamadas API (com envio de cookies)
+    // todas as requisições que dependem de sessão usam credentials: 'include'
+    // ===========================
+    async function loginBackend(email, senha) {
+        try {
+            const res = await fetch(`${BASE_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, senha }),
+                credentials: 'include' // garante recebimento / armazenamento do cookie de sessão
+            });
+
+            if (!res.ok) {
+                const clone = res.clone();
+                try {
+                    const errJson = await clone.json();
+                    throw new Error(errJson.error || JSON.stringify(errJson));
+                } catch (_) {
+                    const txt = await res.text();
+                    throw new Error(txt || `Erro ${res.status}`);
+                }
+            }
+            return await res.json();
+        } catch (err) {
+            console.error('loginBackend:', err);
+            throw err;
+        }
+    }
+
+    async function criarUsuarioBackend(payload) {
+        try {
+            const res = await fetch(`${BASE_URL}/usuarios`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                credentials: 'include' // inclui cookie caso backend dependa dele
+            });
+
+            if (!res.ok) {
+                const clone = res.clone();
+                try {
+                    const errJson = await clone.json();
+                    throw new Error(errJson.error || JSON.stringify(errJson));
+                } catch (_) {
+                    const txt = await res.text();
+                    throw new Error(txt || `Erro ${res.status}`);
+                }
+            }
+            return await res.json();
+        } catch (err) {
+            console.error('criarUsuarioBackend:', err);
+            throw err;
+        }
+    }
+
+    async function fetchErenderizarUsuarios() {
+        try {
+            const res = await fetch(`${BASE_URL}/cadastrados`, {
+                method: 'GET',
+                credentials: 'include' // envia cookie para ver se está logado
+            });
+            if (!res.ok) {
+                throw new Error('Falha ao carregar usuários (status ' + res.status + ')');
+            }
+            const data = await res.json();
+            usuarios = Array.isArray(data) ? data : [];
+            renderizarListaUsuarios();
+        } catch (err) {
+            console.error('fetchErenderizarUsuarios:', err);
+            // mostra mensagem amigável na UI
+            listaVaziaMsg.classList.remove('hidden');
+            listaVaziaMsg.querySelector('h3').textContent = 'Erro ao carregar usuários';
+            listaVaziaMsg.querySelector('p').textContent = 'Verifique se está autenticado e tente novamente.';
+            corpoTabelaUsuarios.parentElement.classList.add('hidden');
+        }
+    }
+
+    // DELETE -> chama sua rota DELETE /deletar/<id>
+    async function deletarUsuarioBackend(userId) {
+        try {
+            const res = await fetch(`${BASE_URL}/deletar/${userId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include' // essencial para enviar cookie de sessão
+            });
+
+            let data = null;
+            try { data = await res.json(); } catch(_) { data = null; }
+
+            if (!res.ok) {
+                const msg = data && (data.error || data.mensagem) ? (data.error || data.mensagem) : `Erro ${res.status}`;
+                throw new Error(msg);
+            }
+
+            // sucesso: backend pode ter invalidado a sessão por design
+            const mensagem = data && (data.mensagem || data.msg) ? (data.mensagem || data.msg) : 'Usuário deletado com sucesso.';
+            alert(mensagem);
+
+            // dependendo de como backend está implementado, pode limpar sessão — forçamos retorno à tela de login
+            navegarPara('autenticacao');
+        } catch (err) {
+            console.error('deletarUsuarioBackend:', err);
+            alert('Falha ao deletar usuário: ' + (err.message || err));
+        }
+    }
+
+    // ===========================
+    // ações ligadas a formulários
+    // ===========================
+    async function handleLogin(e) {
+        e.preventDefault();
+        if (!validarFormulario(formLogin)) return;
+
+        limparTodosErros(formLogin);
+        const email = (formLogin.querySelector('#login-email') || {}).value || '';
+        const senha = (formLogin.querySelector('#login-senha') || {}).value || '';
+
+        try {
+            await loginBackend(email, senha);
+            // sucesso
+            alert('Login efetuado com sucesso!');
+            // solicita a lista (enviando cookie)
+            await fetchErenderizarUsuarios();
+            navegarPara('listagem');
+        } catch (err) {
+            console.error('handleLogin error:', err);
+            const gen = formLogin.querySelector('.general-error');
+            if (gen) {
+                gen.textContent = err.message || 'Erro no login';
+                gen.style.display = 'block';
+            } else {
+                alert('Erro no login: ' + (err.message || err));
+            }
+        }
+    }
+
+    async function handleCadastro(e) {
+        e.preventDefault();
+        if (!validarFormulario(formCadastro)) return;
+
+        limparTodosErros(formCadastro);
+
+        const fd = new FormData(formCadastro);
+        const payload = {
+            nome: fd.get('nome'),
+            sobrenome: fd.get('sobrenome'),
+            email: fd.get('email'),
+            senha: fd.get('senha'),
+            endereco: {
+                rua: fd.get('rua'),
+                numero: fd.get('numero'),
+                cep: fd.get('cep')
+            }
+        };
+
+        try {
+            const novo = await criarUsuarioBackend(payload);
+            alert(`Usuário ${novo.nome || novo.email || ''} cadastrado com sucesso!`);
+            formCadastro.reset();
+            // tentar exibir lista após criar:
+            await fetchErenderizarUsuarios();
+            navegarPara('listagem');
+        } catch (err) {
+            console.error('handleCadastro error:', err);
+            // provável email duplicado: mostra no campo email
+            const emailInput = formCadastro.querySelector('#email');
+            mostrarErro(emailInput, err.message || 'Erro ao cadastrar');
+        }
+    }
+
+    // ===========================
+    // renderização da tabela
+    // ===========================
+    function renderizarListaUsuarios() {
+        corpoTabelaUsuarios.innerHTML = '';
+        const termo = (inputBusca.value || '').toLowerCase();
+
+        const filtrados = usuarios.filter(u =>
+            (u.nome || '').toLowerCase().includes(termo) ||
+            (u.email || '').toLowerCase().includes(termo)
+        );
+
+        listaVaziaMsg.classList.toggle('hidden', filtrados.length > 0);
+        corpoTabelaUsuarios.parentElement.classList.toggle('hidden', filtrados.length === 0);
+
+        filtrados.forEach(usuario => {
+            const tr = document.createElement('tr');
+            const rua = usuario.endereco && usuario.endereco.rua ? usuario.endereco.rua : '';
+            const numero = usuario.endereco && usuario.endereco.numero ? usuario.endereco.numero : '';
+            tr.innerHTML = `
+                <td>${usuario.nome || ''} ${usuario.sobrenome || ''}</td>
+                <td>${usuario.email || ''}</td>
+                <td>${rua}${numero ? ', ' + numero : ''}</td>
+                <td class="acoes-usuario">
+                    <button class="btn btn-perigo btn-excluir" data-id="${usuario.id}" title="Excluir">
+                        <svg width="16" height="16"><use xlink:href="#trash" /></svg>
+                    </button>
+                </td>
+            `;
+            corpoTabelaUsuarios.appendChild(tr);
+        });
+    }
+
+    // ===========================
+    // listeners / eventos
+    // ===========================
+    signUpButton?.addEventListener('click', () => {
+        authWrapper.classList.add('right-panel-active');
+        limparTodosErros(formLogin);
+    });
+    signInButton?.addEventListener('click', () => {
+        authWrapper.classList.remove('right-panel-active');
+        limparTodosErros(formCadastro);
+    });
+
+    btnVoltarLogin?.addEventListener('click', () => {
+        navegarPara('autenticacao');
+        authWrapper.classList.remove('right-panel-active');
+    });
+
+    formLogin?.addEventListener('submit', handleLogin);
+    formCadastro?.querySelector('#numero')?.addEventListener('input', formatarInputNumerico);
+    formCadastro?.querySelector('#cep')?.addEventListener('input', formatarInputNumerico);
+    formCadastro?.addEventListener('submit', handleCadastro);
+    inputBusca?.addEventListener('input', renderizarListaUsuarios);
+
+    // clique em botões da tabela (delegation) — captura a lixeira e chama delete
+    corpoTabelaUsuarios?.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const id = btn.dataset.id;
+        if (btn.classList.contains('btn-excluir')) {
+            const ok = confirm('Confirma a exclusão deste usuário?');
+            if (!ok) return;
+            await deletarUsuarioBackend(id);
+        } else if (btn.classList.contains('btn-editar')) {
+            // edição não implementada no backend, mantemos o modal (se houver)
+            abrirModalEdicao && abrirModalEdicao(id);
+        }
+    });
+
+    // ===========================
+    // inicialização
+    // ===========================
+    // inicia na tela de autenticação; tenta carregar lista (será bloqueado se não logado)
+    navegarPara('autenticacao');
 });

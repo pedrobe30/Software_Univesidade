@@ -1,135 +1,146 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Projeto Acadêmico — Neo Academia</title>
-
-  <!-- Fonte -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="../static/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculdade New - Gerenciamento de Usuários</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Link para o arquivo CSS -->
+    <link rel="stylesheet" href="../static/css/style.css">
 </head>
 <body>
-  <div class="neo-app">
-    <header class="neo-top">
-      <div class="neo-brand">
-        <svg class="logo-blob" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <defs>
-            <linearGradient id="g1" x1="0" x2="1">
-              <stop offset="0" stop-color="#4dd0e1"/>
-              <stop offset="1" stop-color="#ff6b6b"/>
-            </linearGradient>
-          </defs>
-          <path fill="url(#g1)" d="M60 4c12 0 22 4 30 10s16 18 16 32-6 26-14 36S75 100 60 116 32 104 18 90 4 56 4 42 24 4 60 4z"/>
-        </svg>
-        <div class="brand-text">
-          <div class="title">Neo Academia</div>
-          <div class="subtitle">Protótipo: Gestão de notas</div>
-        </div>
-      </div>
+    <!-- ÍCONES SVG EMBUTIDOS -->
+    <svg width="0" height="0" class="hidden">
+        <symbol fill="currentColor" viewBox="0 0 16 16" id="plus">
+            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+        </symbol>
+        <symbol fill="currentColor" viewBox="0 0 16 16" id="list">
+            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+        </symbol>
+        <!-- Ícone de lixeira -->
+        <symbol fill="currentColor" viewBox="0 0 16 16" id="trash">
+            <path d="M5.5 5.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5v-7z"/>
+            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4H2.5a1 1 0 1 1 0-2H5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1h2.5a1 1 0 0 1 1 1zM6 4v9h4V4H6z"/>
+        </symbol>
+    </svg>
 
-      <div class="neo-actions">
-        <label class="search-wrap" title="Pesquisar">
-          <input id="search" class="search" placeholder="Pesquisar usuários ou notas..." />
-          <svg class="search-ic" viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.471 6.471 0 0 0 1.57-5.34C15.36 5.01 12.35 2 8.68 2S2 5.01 2 8.39 5.01 14.77 8.68 14.77c1.61 0 3.09-.55 4.24-1.47l.27.28v.79l5 4.99L20.49 19l-4.99-5zM8.68 13a4.6 4.6 0 0 1-4.6-4.6c0-2.54 2.07-4.6 4.6-4.6s4.6 2.06 4.6 4.6A4.6 4.6 0 0 1 8.68 13z"/></svg>
-        </label>
-
-        <button id="themeToggle" class="btn ghost" aria-pressed="false">Tema</button>
-        <a href="#form" class="btn primary">Nova nota</a>
-      </div>
-    </header>
-
-    <main class="neo-main">
-      <!-- Left: lista / feed -->
-      <section class="neo-left">
-        <div class="panel head-panel">
-          <div>
-            <h2>Usuários</h2>
-            <p class="muted small">Organizados por último registro</p>
-          </div>
-          <div class="panel-stats">
-            <div><span id="countUsers">—</span><small>Usuários</small></div>
-            <div><span id="countNotas">—</span><small>Notas</small></div>
-          </div>
-        </div>
-
-        <div id="usersList" class="users-grid">
-          <!-- skeleton & items renderizados via JS -->
-        </div>
-      </section>
-
-      <!-- Right: formulário -->
-      <aside id="form" class="neo-right">
-        <div class="panel card form-card">
-          <div class="form-header">
-            <h3 id="formTitle">Criar nova nota</h3>
-            <small class="muted">Preencha os campos — opção de anexar documento</small>
-          </div>
-
-          <form id="userForm" class="form" autocomplete="off">
-            <div class="group">
-              <label>Nome do usuário <span class="req">*</span></label>
-              <input id="usuario" name="usuario" required placeholder="Ex: Mariana Costa" />
+    <!-- PÁGINA DE AUTENTICAÇÃO (LOGIN E CADASTRO) -->
+    <main id="pagina-autenticacao" class="container-full">
+        <div class="auth-wrapper" id="auth-wrapper">
+            <!-- Formulário de Cadastro -->
+            <div class="form-container sign-up-container">
+                <form id="form-cadastro" novalidate>
+                    <h1>Crie sua Conta</h1>
+                    <div class="form-grupo">
+                        <input type="text" id="nome" name="nome" placeholder="Nome *" required>
+                        <div class="error-message" aria-live="polite"></div>
+                    </div>
+                    <div class="form-grupo">
+                        <input type="text" id="sobrenome" name="sobrenome" placeholder="Sobrenome *" required>
+                        <div class="error-message" aria-live="polite"></div>
+                    </div>
+                    <div class="form-grupo">
+                        <input type="email" id="email" name="email" placeholder="Email *" required>
+                        <div class="error-message" aria-live="polite"></div>
+                    </div>
+                     <div class="form-grupo">
+                        <input type="password" id="senha" name="senha" placeholder="Senha *" required>
+                        <div class="error-message" aria-live="polite"></div>
+                    </div>
+                     <div class="form-grupo">
+                        <input type="password" id="confirmar-senha" name="confirmar-senha" placeholder="Confirmar Senha *" required>
+                        <div class="error-message" aria-live="polite"></div>
+                    </div>
+                     <div class="form-grupo">
+                        <input type="text" id="rua" name="rua" placeholder="Rua *" required>
+                        <div class="error-message" aria-live="polite"></div>
+                    </div>
+                     <div class="form-grupo">
+                        <input type="text" id="numero" name="numero" placeholder="Número *" required inputmode="numeric">
+                        <div class="error-message" aria-live="polite"></div>
+                    </div>
+                    <div class="form-grupo">
+                        <input type="text" id="cep" name="cep" placeholder="CEP *" required inputmode="numeric">
+                        <div class="error-message" aria-live="polite"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primario">Cadastrar</button>
+                </form>
             </div>
 
-            <div class="group">
-              <label>Título da nota</label>
-              <input id="nota" name="nota" placeholder="Ex: Prova 1 — LP" />
+            <!-- Formulário de Login -->
+            <div class="form-container sign-in-container">
+                <form id="form-login" novalidate>
+                    <h1>Fazer Login</h1>
+                    <div class="form-grupo">
+                        <input type="email" id="login-email" name="email" placeholder="Email *" required>
+                        <div class="error-message" aria-live="polite"></div>
+                    </div>
+                    <div class="form-grupo">
+                        <input type="password" id="login-senha" name="senha" placeholder="Senha *" required>
+                        <div class="error-message" aria-live="polite"></div>
+                    </div>
+                     <div class="error-message general-error" aria-live="polite"></div>
+                    <button type="submit" class="btn btn-primario">Entrar</button>
+                </form>
             </div>
 
-            <div class="group">
-              <label>Conteúdo</label>
-              <textarea id="conteudo" name="conteudo" rows="6" placeholder="Observações, resumo, correções..."></textarea>
+            <!-- Sobreposição (Overlay) -->
+            <div class="overlay-container">
+                <div class="overlay">
+                    <div class="overlay-panel overlay-left">
+                        <h1>Bem-vindo de Volta!</h1>
+                        <p>Para se manter conectado, faça login com suas informações.</p>
+                        <button class="btn ghost" id="signIn">Fazer Login</button>
+                    </div>
+                    <div class="overlay-panel overlay-right">
+                        <h1>Olá, Amigo!</h1>
+                        <p>Entre com seus dados e comece sua jornada conosco.</p>
+                        <button class="btn ghost" id="signUp">Cadastre-se</button>
+                    </div>
+                </div>
             </div>
-
-            <div class="group filegroup">
-              <label>Documento (arraste ou selecione)</label>
-              <div id="dropzone" class="dropzone">Arraste o arquivo aqui ou clique para selecionar
-                <input id="document" name="document" type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.txt" />
-              </div>
-              <div class="filemeta"><span id="fileName" class="muted">Nenhum arquivo</span> <button id="clearFile" type="button" class="btn ghost tiny">Limpar</button></div>
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn primary big">Salvar</button>
-              <button id="btnUpdate" type="button" class="btn ghost">Atualizar</button>
-              <button id="btnDelete" type="button" class="btn danger">Excluir</button>
-            </div>
-
-            <div id="formMsg" class="form-msg" aria-live="polite"></div>
-          </form>
         </div>
-
-        <div class="panel card help-card">
-          <h4>UX notes</h4>
-          <ul class="muted small">
-            <li>Selecione um usuário para preencher o formulário automaticamente.</li>
-            <li>Ao excluir, todas as notas do usuário serão removidas.</li>
-            <li>Use arquivos para anexar evidências (PDF/imagem).</li>
-          </ul>
-        </div>
-      </aside>
     </main>
 
-    <footer class="neo-foot muted small">
-      Neo Academia • Protótipo para apresentação • UI/UX refresh
-    </footer>
-  </div>
+    <!-- PÁGINA DE LISTAGEM -->
+    <main id="pagina-listagem" class="container hidden">
+        <div class="card-header">
+            <h1>Lista de Usuários</h1>
+            <p>Gerencie os usuários cadastrados no sistema.</p>
+        </div>
 
-  <!-- Toasts -->
-  <div id="toast" class="toast" aria-live="polite"></div>
+        <div class="listagem-controles">
+            <input type="search" id="input-busca" placeholder="Buscar por nome ou email...">
+             <button class="btn btn-secundario" id="btn-voltar-login">
+                Sair
+            </button>
+        </div>
 
-  <!-- Modal preview -->
-  <div id="modal" class="modal" aria-hidden="true">
-    <div class="modal-card">
-      <button id="modalClose" class="btn ghost tiny modal-close" aria-label="Fechar">×</button>
-      <h4 id="modalTitle"></h4>
-      <div id="modalBody"></div>
-      <div id="modalFooter" class="muted small"></div>
-    </div>
-  </div>
+        <div class="lista-usuarios-container">
+            <table class="tabela-usuarios">
+                <thead>
+                    <tr>
+                        <th>Nome Completo</th>
+                        <th>Email</th>
+                        <th>Endereço</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-tabela-usuarios"></tbody>
+            </table>
+            <div id="lista-vazia-mensagem" class="lista-vazia hidden">
+                <h3>Nenhum usuário encontrado</h3>
+                <p>Cadastre um novo usuário para começar.</p>
+            </div>
+        </div>
+    </main>
 
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <!-- Link para o arquivo JavaScript -->
+    <script src="../static/js/app.js"></script>
 </body>
 </html>
