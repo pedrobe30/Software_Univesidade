@@ -25,13 +25,13 @@ def criar_usuario(db_session, nome, sobrenome, email, senha, endereco):
         senha_hash = senha_hash
     )
 
-    novo_endereco = Enderecos(
+    novo_endereco = EnderecoUsuario(
         rua = endereco["rua"],
         numero = endereco["numero"],
         cep = endereco["cep"]
     )
 
-    novo_usuario.enderecos = novo_endereco
+    novo_usuario = novo_endereco
     try:
 
         db_session.add(novo_usuario)
@@ -98,6 +98,28 @@ def deletar_usuario(db_session, user_id_logado, user_id_para_deletar):
         db_session.rollback()
         raise
 
+
+def add_polo(db_session, nome, telefone, polo_endereco):
+    if not nome or telefone or polo_endereco:
+        raise ValueError("erro:" "Está faltando preencher campos")
+    
+    if not isinstance(polo_endereco, dict) or any(k not in polo_endereco for k in ("rua", "numero", "cep", "cidade", "estado")):
+        raise ValueError("endereco deve ser dict com rua, numero, cep")
+    
+    novo_polo = Polo(
+        nome = nome,
+        telefone = telefone
+    )
+
+    novo_endereco_polo = EnderecoPolo(
+        rua = polo_endereco["rua"],
+        numero = polo_endereco["numero"],
+        cep = polo_endereco["cep"],
+        cidade = polo_endereco["cidade"],
+        estado = polo_endereco["estado"]
+    )
+
+    novo_polo.polo = novo_endereco_polo
 
 
 def get_usuarios(db_session):

@@ -8,7 +8,7 @@ from main import *
 
 app = Flask(__name__)
 app.secret_key = "chave-secreta-22121979"
-CORS(app)
+CORS(app, origins=["http://127.0.0.1:3000", "http://127.0.0.1:5500", "http://localhost:3000"], supports_credentials=True)
 
 
 @app.route("/usuarios", methods=["POST", "GET"])
