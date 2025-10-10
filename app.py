@@ -145,4 +145,61 @@ def deletar_user(user_id):
     except Exception as e:
         app.logger.exception(e)
         return jsonify({"error": "Erro interno no servidor"}), 500
+    
+@app.route("/polos", methods=["POST"])
+def cadastrar_polo():
+    data = request.get_json
 
+    campos_obrigatorios = ["nome", "telefone", "endereco"]
+    for campo in campos_obrigatorios:
+        if campo not in data:
+            return make_response(jsonify({"error": f"campo '{campo}' faltando"}), 400)
+        
+    endereco = data["endereco"]
+    for campo in ["rua", "numero", "cep", "cidade", "estado"]:
+        if campo not in endereco:
+            return make_response(jsonify({"error": f"campo '{campo}' do endereço faltando"}), 400)
+        
+    try:
+        with SessionLocal1() as db_session:
+            dict_novo_polo = add_polo(
+                db_session,
+                nome=data["nome"],
+                telefone=data["telefone"],
+                endereco=data["endereco"]
+            )
+
+            return jsonify(dict_novo_polo), 201
+    
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    
+    except IntegrityError as e:
+        db_session.rollback()
+        return jsonify({"error": "Violação de integridade no banco: " + str(e.orig)}), 400
+    
+    except Exception as e:
+         app.logger.exception(e)
+         return jsonify({"error": "Erro interno no servidor"}), 500
+    
+
+@app.route("/list_polos", methods=["GET"])
+def listar_polos():
+     with SessionLocal1() as db_session:
+         polos = get_polos(db_session)
+
+         resultado = []
+         for u in polos:
+            resultado.append({
+                "id": u.id,
+                "nome": u.nome,
+                "endereco": {
+                    "rua": u.endereco.rua if u.endereco else None,
+                    "numero": u.endereco.numero if u.endereco else None,
+                    "cep": u.endereco.cep if u.endereco else None,
+                    "cidade": u.endereco.cidade if u.endereco else None,
+                    "estado": u.endereco.estado if u.endereco else None
+                }
+            })
+
+            return jsonify(polos)

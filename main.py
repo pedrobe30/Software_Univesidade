@@ -100,7 +100,7 @@ def deletar_usuario(db_session, user_id_logado, user_id_para_deletar):
 
 
 def add_polo(db_session, nome, telefone, polo_endereco):
-    if not nome or telefone or polo_endereco:
+    if not nome or not telefone or not polo_endereco:
         raise ValueError("erro:" "Está faltando preencher campos")
     
     if not isinstance(polo_endereco, dict) or any(k not in polo_endereco for k in ("rua", "numero", "cep", "cidade", "estado")):
@@ -119,11 +119,37 @@ def add_polo(db_session, nome, telefone, polo_endereco):
         estado = polo_endereco["estado"]
     )
 
-    novo_polo.polo = novo_endereco_polo
+    novo_polo.endereco = novo_endereco_polo
+
+
+    try:
+        db_session.add(novo_polo)
+        db_session.commit()
+        db_session.refresh(novo_polo)
+    except Exception as e:
+        db_session.rollback()
+        raise
+
+    return {
+        "id": novo_polo.id,
+        "nome": novo_polo.nome,
+        "telefone": novo_polo.telefone,
+        "endereco": {
+            "rua": novo_endereco_polo.rua,
+            "numero": novo_endereco_polo.numero,
+            "cep": novo_endereco_polo.cep,
+            "cidade": novo_endereco_polo.cidade,
+            "estado": novo_endereco_polo.estado
+        }
+    }
 
 
 def get_usuarios(db_session):
     return db_session.query(Usuario).all()
+
+def get_polos(db_session):
+    return db_session.query(Polo).all()
+
 
 
 
