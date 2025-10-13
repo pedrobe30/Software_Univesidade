@@ -29,14 +29,16 @@ class Usuario(Base):
     senha_hash = Column(String(255), nullable=False)
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
     
+   
     enderecos = relationship(
         "EnderecoUsuario",
         back_populates="usuario",
         uselist=False,
         cascade="all, delete-orphan"
     )
-    matriculas = relationship("Matriculas", back_populates="usuarios", cascade="all, delete-orphan")
-    notas = relationship("Nota", back_populates="autor")
+ 
+    matriculas = relationship("Matricula", back_populates="usuario", cascade="all, delete-orphan")
+    notas = relationship("Nota", back_populates="usuario")
 
 
 class EnderecoUsuario(Base):
@@ -47,9 +49,10 @@ class EnderecoUsuario(Base):
     numero = Column(Integer, nullable=False)
     cep = Column(String(20), nullable=False)
 
-    
     id_usuario = Column(Integer, ForeignKey("usuarios.id"), unique=True, nullable=True)
-    usuario = relationship("Usuario", back_populates="endereco")
+    
+    usuario = relationship("Usuario", back_populates="enderecos")
+
 
 class Polo(Base):
     __tablename__ = "polos"
@@ -58,7 +61,6 @@ class Polo(Base):
     nome = Column(String(255), nullable=False)
     telefone = Column(String(20), nullable=True)
 
-    
     endereco = relationship(
         "EnderecoPolo",
         back_populates="polo",
@@ -66,6 +68,7 @@ class Polo(Base):
         cascade="all, delete-orphan"
     )
     cursos = relationship("CursoPolo", back_populates="polo", cascade="all, delete-orphan")
+
 
 class EnderecoPolo(Base):
     __tablename__ = "enderecos_polos"
@@ -77,24 +80,22 @@ class EnderecoPolo(Base):
     cidade = Column(String(100), nullable=False)
     estado = Column(String(2), nullable=False)  
     
-    
     id_polo = Column(Integer, ForeignKey("polos.id"), unique=True, nullable=False)
-    
-    
     polo = relationship("Polo", back_populates="endereco")
+
 
 class Curso(Base):
     __tablename__ = "cursos"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     nome = Column(String(255), nullable=False)
-    carga_horaria = Column(Integer, nullable=False)  # em horas
+    carga_horaria = Column(Integer, nullable=False)  
     modalidade = Column(Enum(ModalidadeEnum), nullable=False)
     area = Column(Enum(AreaEnum), nullable=False)
 
-   
     polos = relationship("CursoPolo", back_populates="curso", cascade="all, delete-orphan")
     matriculas = relationship("Matricula", back_populates="curso", cascade="all, delete-orphan")
+
 
 class CursoPolo(Base):
     __tablename__ = "cursos_polos"
@@ -106,6 +107,7 @@ class CursoPolo(Base):
     curso = relationship("Curso", back_populates="polos")
     polo = relationship("Polo", back_populates="cursos")
 
+
 class Matricula(Base):
     __tablename__ = "matricula"
 
@@ -115,8 +117,10 @@ class Matricula(Base):
     data_matricula = Column(DateTime(timezone=True), server_default=func.now())
     status = Column(Enum(StatusMatriculaEnum), default=StatusMatriculaEnum.ativa, nullable=False)
 
+ 
     usuario = relationship("Usuario", back_populates="matriculas")
     curso = relationship("Curso", back_populates="matriculas")
+
 
 class Nota(Base):
     __tablename__ = "notas"
@@ -134,4 +138,4 @@ class Nota(Base):
 if __name__ == "__main__":
    print("Criando Tabelas...")
    Base.metadata.create_all(bind=engine)
-   print("TAbelas criadas")
+   print("Tabelas criadas")

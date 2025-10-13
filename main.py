@@ -143,12 +143,168 @@ def add_polo(db_session, nome, telefone, polo_endereco):
         }
     }
 
+def add_curso(db_session, nome, carga_horaria, modalidade, area, polos_ids=None):
+    if not nome or not carga_horaria or not area or not modalidade:
+        raise ValueError("nome, carga_horaria, modalidade e area são obrigatórios")
+    
+    try:
+        modalidade_enum = ModalidadeEnum[modalidade]
+        area_enum = AreaEnum[area]
+    except KeyError:
+        raise ValueError("Modalidade Invalida")
+
+    if modalidade == "presencial" and (not polos_ids or len(polos_ids) == 0):
+        raise ValueError("Cursos Presenciais precisam ter pelo menos um polo")
+
+    if polos_ids:
+        for polo_id in polos_ids:
+            polo_existe = db_session.query(Polo).filter(Polo.id == polo_id).first()
+            if not polo_existe:
+                raise ValueError(f"Polo com id {polo_id} não encontrado")
+
+    novo_curso = Curso(
+        nome = nome,
+        carga_horaria = carga_horaria,
+        modalidade = modalidade_enum,
+        area = area_enum
+    )     
+
+    try:
+        db_session.add(novo_curso)
+        db_session.commit()
+        db_session.refresh(novo_curso)
+    except Exception as e:
+        db_session.rollback()
+        raise
+
+    if polos_ids:
+        for polo_id in polos_ids:
+            associacao = CursoPolo(id_curso=novo_curso.id, id_polo=polo_id)
+            db_session.add(associacao)
+        db_session.commit()
+    
+    return {
+        "id": novo_curso.id,
+        "nome": novo_curso.nome,
+        "carga_horaria": novo_curso.carga_horaria,
+        "modalidade": novo_curso.modalidade,
+        "area": novo_curso.area,
+        "polos": [{"id": cp.polo.id, "nome": cp.polo.nome} for cp in novo_curso.polos]
+    }
+
+
+def add_curso(db_session, nome, carga_horaria, modalidade, area, polos_ids=None):
+    if not nome or not carga_horaria or not area or not modalidade:
+        raise ValueError("nome, carga_horaria, modalidade e area são obrigatórios")
+    
+    try:
+        modalidade_enum = ModalidadeEnum[modalidade]
+        area_enum = AreaEnum[area]
+    except KeyError:
+        raise ValueError("Modalidade ou Area Invalida")
+
+    if modalidade == "presencial" and (not polos_ids or len(polos_ids) == 0):
+        raise ValueError("Cursos Presenciais precisam ter pelo menos um polo")
+
+    if polos_ids:
+        for polo_id in polos_ids:
+            polo_existe = db_session.query(Polo).filter(Polo.id == polo_id).first()
+            if not polo_existe:
+                raise ValueError(f"Polo com id {polo_id} não encontrado")
+
+    novo_curso = Curso(
+        nome = nome,
+        carga_horaria = carga_horaria,
+        modalidade = modalidade_enum,
+        area = area_enum
+    )     
+
+    try:
+        db_session.add(novo_curso)
+        db_session.commit()
+        db_session.refresh(novo_curso)
+    except Exception as e:
+        db_session.rollback()
+        raise
+
+    if polos_ids:
+        for polo_id in polos_ids:
+            associacao = CursoPolo(id_curso=novo_curso.id, id_polo=polo_id)
+            db_session.add(associacao)
+        db_session.commit()
+    
+    return {
+        "id": novo_curso.id,
+        "nome": novo_curso.nome,
+        "carga_horaria": novo_curso.carga_horaria,
+        "modalidade": novo_curso.modalidade.value,
+        "area": novo_curso.area.value,
+        "polos": [{"id": cp.polo.id, "nome": cp.polo.nome} for cp in novo_curso.polos]
+    }
+
+def criar_matricula(db_session, user_id, id_curso, status):
+  
+    # if id_curso:
+    #     for curso_id in id_curso:
+    #         curso_existe = db_session.query(Curso).filter(Curso.id == curso_id).first()
+    #         if not curso_existe:
+    #             raise ValueError(f"Curso não encontrado")
+            
+  curso = db_session.query(Curso).filter(Curso.id == id_curso).first()
+
+  if not curso:
+      raise ValueError("Curso não encontrado")
+
+  matricula = db_session.query(Matricula).filter(Matricula.id == user_id, Matricula.id_curso == id_curso).first()
+  if matricula:
+    raise ValueError("Você já está cadastrado neste curso")
+    
+  try:
+    status_enum = StatusMatriculaEnum[status]
+  except KeyError:
+        raise ValueError("Status Invalida")
+  
+  usuario = db_session.query(Usuario).filter(Usuario.id == user_id).first()
+    
+  nova_matricula = Matricula(
+      id_usuario = user_id,
+      id_curso = id_curso,
+      status =  status_enum
+    )
+
+  try:
+     db_session.add(nova_matricula)
+     db_session.commit()
+     db_session.refresh(nova_matricula)
+  except Exception as e:
+     db_session.rollback()
+     raise
+
+  return {
+      "id": nova_matricula.id,
+      "usuario": {
+      "id": usuario.id,
+      "nome": usuario.nome,
+      "sobrenome": usuario.sobrenome
+      },
+      "curso": {
+      "id": curso.id,
+      "nome": curso.nome
+      },
+      "data_matricula": nova_matricula.data_matricula.isoformat(),
+      "status": nova_matricula.status.value  
+}
+    
+        
 
 def get_usuarios(db_session):
     return db_session.query(Usuario).all()
 
 def get_polos(db_session):
     return db_session.query(Polo).all()
+
+def get_cursos(db_session):
+    return db_session.query(Curso).all()
 
 
 

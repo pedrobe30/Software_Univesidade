@@ -148,7 +148,7 @@ def deletar_user(user_id):
     
 @app.route("/polos", methods=["POST"])
 def cadastrar_polo():
-    data = request.get_json
+    data = request.get_json()
 
     campos_obrigatorios = ["nome", "telefone", "endereco"]
     for campo in campos_obrigatorios:
@@ -166,7 +166,7 @@ def cadastrar_polo():
                 db_session,
                 nome=data["nome"],
                 telefone=data["telefone"],
-                endereco=data["endereco"]
+                polo_endereco=data["endereco"]
             )
 
             return jsonify(dict_novo_polo), 201
@@ -202,4 +202,72 @@ def listar_polos():
                 }
             })
 
-            return jsonify(polos)
+            return jsonify(resultado)
+
+
+@app.route("/cursos", methods=["GET", "POST"])
+def cadastrando_cursos():
+    data = request.get_json()
+
+    campos_obrigatorios = ["nome", "carga_horaria", "modalidade", "area"]
+    for campo in campos_obrigatorios:
+        if campo not in data:
+            return make_response(jsonify({"error": f"campo '{campo}' faltando"}), 400)
+    
+    try:
+        with SessionLocal1() as db_session:
+            dict_novo_curso = add_curso(
+                db_session,
+                nome= data["nome"],
+                carga_horaria= data["carga_horaria"],
+                modalidade= data["modalidade"],
+                area = data["area"],
+                polos_ids = data.get("polos_ids")
+            )
+            
+            return jsonify(dict_novo_curso), 201
+    
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    
+    except IntegrityError as e:
+        db_session.rollback()
+        return jsonify({"error": "Violação de integridade no banco: " + str(e.orig)}), 400
+    
+    except Exception as e:
+         app.logger.exception(e)
+         return jsonify({"error": "Erro interno no servidor"}), 500
+    
+@app.route("/lista_cursos", methods=["GET"])
+def list_cursos():
+    with SessionLocal1() as db_session:
+        cursos = get_cursos(db_session)
+
+        resultado = []
+
+        for u in cursos:
+            resultado.append({
+                "id": u.id,
+                "nome": u.nome,
+                "carga_horaria": u.carga_horaria,
+                "modalidade": u.modalidade.value,
+                "area": u.area.value,
+                "polos": [{"id": cp.polo.id, "nome": cp.polo.nome} for cp in u.polos]  
+
+
+
+            })
+
+    return jsonify(resultado)
+
+@app.route("/matricula", methods=["GET", "POST"])
+def add_matricula():
+    data = request.get_json()
+
+    # try:
+    #     with SessionLocal1() as db_session:
+    #         dict_nova_matricula = criar_matricula(
+    #             db_session,
+                
+    #         )
+    # except 
