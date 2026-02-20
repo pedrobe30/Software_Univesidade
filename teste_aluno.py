@@ -38,8 +38,8 @@ try:
     wait.until(EC.element_to_be_clickable((By.ID, "btn-ir-cadastro"))).click()
 
     print(f"3. Preenchendo dados do novo aluno ({email_teste})...")
-    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "#form-cadastro input[name='nome']"))).send_keys("Robô")
-    driver.find_element(By.CSS_SELECTOR, "#form-cadastro input[name='sobrenome']").send_keys("QA")
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "#form-cadastro input[name='nome']"))).send_keys("Teste")
+    driver.find_element(By.CSS_SELECTOR, "#form-cadastro input[name='sobrenome']").send_keys("Qualidade")
     driver.find_element(By.CSS_SELECTOR, "#form-cadastro input[name='email']").send_keys(email_teste)
     
     driver.find_element(By.ID, "reg-senha").send_keys(senha_teste)
@@ -64,28 +64,32 @@ try:
 
     print("6. Buscando cursos disponíveis para matrícula...")
     try:
-        # Tenta achar o botão de matricular
-        btn_matricular = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".btn-matricular")))
+        btn_matricular = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#grid-cursos .btn-primary")))
         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn_matricular)
         time.sleep(1)
         btn_matricular.click()
         
         print("7. Confirmando a matrícula...")
         wait.until(EC.alert_is_present())
-        driver.switch_to.alert.accept() 
+        driver.switch_to.alert.accept() # Aceita a pergunta: "Confirmar matrícula?"
+        
+        # AGORA O ROBÔ VAI LER O SEGUNDO ALERTA!
         wait.until(EC.alert_is_present())
-        driver.switch_to.alert.accept() 
+        alerta_resultado = driver.switch_to.alert
+        mensagem = alerta_resultado.text
+        alerta_resultado.accept()
+        
+        # Se a mensagem for o erro "Faça login", o teste quebra na hora aqui:
+        assert "realizada" in mensagem.lower(), f"❌ ERRO DO BACKEND: {mensagem}"
 
         print("8. Verificando se o curso apareceu no Perfil do Aluno...")
-        tabela_matriculas = wait.until(EC.presence_of_element_located((By.ID, "tabela-minhas-matriculas")))
+        tabela_matriculas = wait.until(EC.visibility_of_element_located((By.ID, "tabela-minhas-matriculas")))
         assert "Nenhuma matrícula" not in tabela_matriculas.text
         
-        print("✅ TESTE E2E COMPLETO PASSOU!")
+        print("✅ TESTE E2E COMPLETO PASSOU (E DE VERDADE DESSA VEZ)!")
 
-
-    except TimeoutException:
-        print("⚠️ O robô não achou nenhum curso para se matricular! Verifique se há cursos cadastrados no sistema.")
-        lidar_com_alertas_pendentes(driver)
+    except Exception as e:
+        print(f"❌ O TESTE FALHOU NA MATRÍCULA: {e}")
        
 
 except UnexpectedAlertPresentException as e:

@@ -8,6 +8,8 @@ from main import *
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
 
+app.config['SESION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
 
 CORS(app, origins=[
     "http://127.0.0.1:3000", 
