@@ -21,5 +21,7 @@ jobs:
         pip install flask sqlalchemy psycopg2-binary python-dotenv flask-cors bcrypt pytest
 
     - name: Rodar os testes com Pytest
+      env:
+        DATABASE_URL: "sqlite:///:memory:" 
       run: |
         pytest -v
