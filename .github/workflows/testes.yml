@@ -23,5 +23,6 @@ jobs:
     - name: Rodar os testes com Pytest
       env:
         DATABASE_URL: "sqlite:///:memory:" 
+        SECRET_KEY: "zSomsJ9Qd9J6WfyUjhY8hW"
       run: |
         pytest -v
