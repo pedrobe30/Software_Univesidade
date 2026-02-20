@@ -3,14 +3,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from dotenv import load_dotenv
 
-
 load_dotenv()
-
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise ValueError("A variável DATABASE_URL não foi encontrada. Verifique o arquivo .env")
+    raise ValueError("ERRO CRÍTICO: DATABASE_URL não foi encontrada nas variáveis de ambiente!")
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
