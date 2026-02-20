@@ -133,8 +133,55 @@ body { background-color: var(--bg-body); color: var(--text-main); height: 100vh;
 .modal-content { background: var(--bg-panel); padding: 2rem; border-radius: 16px; width: 90%; max-width: 500px; position: relative; }
 .close-modal { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; cursor: pointer; }
 
-/* Mobile */
+/* === MOBILE E RESPONSIVIDADE === */
 @media (max-width: 768px) {
-    .dashboard-layout { grid-template-columns: 1fr; }
-    .sidebar { display: none; /* Implementar mobile menu se necessário */ }
+    /* Muda o layout de 2 colunas laterais para 1 coluna empilhada */
+    .dashboard-layout {
+        grid-template-columns: 1fr; /* Apenas uma coluna */
+        grid-template-rows: auto 1fr; /* Sidebar no topo (auto), conteúdo depois */
+        height: auto; /* Remove altura fixa de 100vh para permitir rolagem */
+        overflow-y: visible;
+    }
+
+    /* Ajusta a Sidebar para ficar no topo, tipo um cabeçalho */
+    .sidebar {
+        display: flex; /* Garante que ela apareça! */
+        flex-direction: row; /* Itens um ao lado do outro */
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        width: 100%;
+    }
+
+    /* Ajustes menores para caber tudo na barra superior */
+    .logo { margin-bottom: 0; font-size: 1rem; }
+    .menu { 
+        flex-direction: row; /* Links na horizontal */
+        gap: 5px; 
+        margin: 0 15px;
+        overflow-x: auto; /* Permite rolar os ícones se a tela for muito pequena */
+    }
+    .menu-item span { display: none; /* Esconde o texto dos links, mostra só os ícones */ }
+    .menu-item { padding: 8px; }
+
+    /* Simplifica a área do usuário */
+    .user-info {
+        border-top: none;
+        padding-top: 0;
+    }
+    .user-text { display: none; /* Esconde nome/cargo no mobile para economizar espaço */ }
+
+    /* Ajuste na área de conteúdo */
+    .content-area {
+        padding: 1rem; /* Menos padding no mobile */
+        height: auto;
+        overflow-y: visible;
+    }
+
+    /* Ajuste nos cards e tabelas */
+    .cards-grid { grid-template-columns: 1fr; } /* Cards um embaixo do outro */
+    .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .btn-secondary { width: 100%; justify-content: center; }
 }
