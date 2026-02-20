@@ -3,155 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculdade New - Gerenciamento de Usuários</title>
+    <title>Faculdade New - Portal</title>
     
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Link para o arquivo CSS (caminho ajustado) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
     <link rel="stylesheet" href="../static/css/style.css">
 </head>
 <body>
-    <!-- ÍCONES SVG EMBUTIDOS -->
-    <svg width="0" height="0" class="hidden">
-        <symbol fill="currentColor" viewBox="0 0 16 16" id="plus">
-            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-        </symbol>
-        <symbol fill="currentColor" viewBox="0 0 16 16" id="list">
-            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
-        </symbol>
-    </svg>
 
-    <!-- PÁGINA DE AUTENTICAÇÃO (LOGIN E CADASTRO) -->
-    <main id="pagina-autenticacao" class="container-full">
-        <div class="auth-wrapper" id="auth-wrapper">
-            <!-- Formulário de Cadastro -->
-            <div class="form-container sign-up-container">
-                <form id="form-cadastro" novalidate>
-                    <h1>Crie sua Conta</h1>
-                    <div class="form-grupo">
-                        <input type="text" id="nome" name="nome" placeholder="Nome *" required>
-                        <div class="error-message" aria-live="polite"></div>
+    <main id="view-auth" class="auth-wrapper active">
+        <div class="auth-container">
+            <div class="auth-panel sign-in">
+                <form id="form-login">
+                    <h1>Bem-vindo</h1>
+                    <p class="subtitle">Acesse sua conta para continuar</p>
+                    
+                    <div class="input-group">
+                        <i class="ph ph-envelope-simple"></i>
+                        <input type="email" name="email" placeholder="Email" required>
                     </div>
-                    <div class="form-grupo">
-                        <input type="text" id="sobrenome" name="sobrenome" placeholder="Sobrenome *" required>
-                        <div class="error-message" aria-live="polite"></div>
+                    <div class="input-group">
+                        <i class="ph ph-lock-key"></i>
+                        <input type="password" name="senha" placeholder="Senha ou Código Admin" required>
                     </div>
-                    <div class="form-grupo">
-                        <input type="email" id="email" name="email" placeholder="Email *" required>
-                        <div class="error-message" aria-live="polite"></div>
-                    </div>
-                     <div class="form-grupo">
-                        <input type="password" id="senha" name="senha" placeholder="Senha *" required>
-                        <div class="error-message" aria-live="polite"></div>
-                    </div>
-                     <div class="form-grupo">
-                        <input type="password" id="confirmar-senha" name="confirmar-senha" placeholder="Confirmar Senha *" required>
-                        <div class="error-message" aria-live="polite"></div>
-                    </div>
-                     <div class="form-grupo">
-                        <input type="text" id="rua" name="rua" placeholder="Rua *" required>
-                        <div class="error-message" aria-live="polite"></div>
-                    </div>
-                     <div class="form-grupo">
-                        <input type="text" id="numero" name="numero" placeholder="Número *" required inputmode="numeric">
-                        <div class="error-message" aria-live="polite"></div>
-                    </div>
-                    <div class="form-grupo">
-                        <input type="text" id="cep" name="cep" placeholder="CEP *" required inputmode="numeric">
-                        <div class="error-message" aria-live="polite"></div>
-                    </div>
-                    <button type="submit" class="btn btn-primario">Cadastrar</button>
+                    
+                    <button type="submit" class="btn-primary">Entrar</button>
+                    <p class="toggle-text">Não tem conta? <span id="btn-ir-cadastro">Cadastre-se</span></p>
                 </form>
             </div>
 
-            <!-- Formulário de Login -->
-            <div class="form-container sign-in-container">
-                <form id="form-login" novalidate>
-                    <h1>Fazer Login</h1>
-                    <div class="form-grupo">
-                        <input type="email" id="login-email" name="email" placeholder="Email *" required>
-                        <div class="error-message" aria-live="polite"></div>
+            <div class="auth-panel sign-up hidden">
+                <form id="form-cadastro">
+                    <h1>Criar Conta</h1>
+                    <p class="subtitle">Junte-se à Faculdade New</p>
+                    
+                    <div class="row">
+                        <div class="input-group">
+                            <input type="text" name="nome" placeholder="Nome" required>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" name="sobrenome" placeholder="Sobrenome" required>
+                        </div>
                     </div>
-                    <div class="form-grupo">
-                        <input type="password" id="login-senha" name="senha" placeholder="Senha *" required>
-                        <div class="error-message" aria-live="polite"></div>
+
+                    <div class="input-group">
+                        <input type="email" name="email" placeholder="Email" required>
                     </div>
-                     <div class="error-message general-error" aria-live="polite"></div>
-                    <button type="submit" class="btn btn-primario">Entrar</button>
+                    <div class="row">
+                        <div class="input-group">
+                            <input type="password" id="reg-senha" name="senha" placeholder="Senha" required>
+                        </div>
+                        <div class="input-group">
+                            <input type="password" id="reg-conf-senha" placeholder="Confirmar" required>
+                        </div>
+                    </div>
+                    
+                    <h3 class="section-title">Endereço</h3>
+                    <div class="row">
+                        <div class="input-group">
+                            <input type="text" name="cep" placeholder="CEP" required>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" name="numero" placeholder="Nº" required>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="rua" placeholder="Rua" required>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Cadastrar</button>
+                    <p class="toggle-text">Já tem conta? <span id="btn-ir-login">Fazer Login</span></p>
                 </form>
             </div>
+        </div>
+    </main>
 
-            <!-- Sobreposição (Overlay) -->
-            <div class="overlay-container">
-                <div class="overlay">
-                    <div class="overlay-panel overlay-left">
-                        <h1>Bem-vindo de Volta!</h1>
-                        <p>Para se manter conectado, faça login com suas informações.</p>
-                        <button class="btn ghost" id="signIn">Fazer Login</button>
+    <div id="view-dashboard" class="dashboard-layout hidden">
+        
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="ph ph-graduation-cap"></i>
+                <span>Faculdade New</span>
+            </div>
+            
+            <nav class="menu">
+                <a href="#" class="menu-item active" data-target="aluno-home" id="menu-aluno-home">
+                    <i class="ph ph-house"></i> Início
+                </a>
+                <a href="#" class="menu-item" data-target="aluno-perfil" id="menu-aluno-perfil">
+                    <i class="ph ph-user"></i> Meu Perfil
+                </a>
+
+                <a href="#" class="menu-item" data-target="admin-cursos" id="menu-admin-cursos">
+                    <i class="ph ph-books"></i> Gerir Cursos
+                </a>
+                <a href="#" class="menu-item" data-target="admin-polos" id="menu-admin-polos">
+                    <i class="ph ph-map-pin"></i> Gerir Polos
+                </a>
+                <a href="#" class="menu-item" data-target="admin-alunos" id="menu-admin-alunos">
+                    <i class="ph ph-users"></i> Alunos
+                </a>
+            </nav>
+
+            <div class="user-info">
+                <div class="avatar-circle">
+                    <span id="user-initials">P</span>
+                </div>
+                <div class="user-text">
+                    <strong id="display-name">Usuário</strong>
+                    <small id="display-role">Aluno</small>
+                </div>
+                <button id="btn-logout" title="Sair"><i class="ph ph-sign-out"></i></button>
+            </div>
+        </aside>
+
+        <main class="content-area">
+            
+            <section id="aluno-home" class="page-section">
+                <header class="section-header">
+                    <h2>Cursos Disponíveis</h2>
+                    <p>Invista no seu futuro com nossos cursos de tecnologia.</p>
+                </header>
+                <div id="grid-cursos" class="cards-grid">
                     </div>
-                    <div class="overlay-panel overlay-right">
-                        <h1>Olá, Amigo!</h1>
-                        <p>Entre com seus dados e comece sua jornada conosco.</p>
-                        <button class="btn ghost" id="signUp">Cadastre-se</button>
+            </section>
+
+            <section id="aluno-perfil" class="page-section hidden">
+                <header class="section-header">
+                    <h2>Meu Perfil</h2>
+                </header>
+                
+                <div class="profile-container">
+                    <div class="profile-card">
+                        <h3>Minhas Matrículas</h3>
+                        <div class="table-responsive">
+                            <table class="modern-table">
+                                <thead>
+                                    <tr>
+                                        <th>Curso</th>
+                                        <th>Modalidade</th>
+                                        <th>Status</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-minhas-matriculas">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="danger-zone">
+                        <h3>Zona de Perigo</h3>
+                        <p>Deseja encerrar seu vínculo com a instituição?</p>
+                        <button class="btn-danger" id="btn-deletar-conta">Excluir Minha Conta</button>
                     </div>
                 </div>
-            </div>
-        </div>
-    </main>
+            </section>
 
-    <!-- PÁGINA DE LISTAGEM -->
-    <main id="pagina-listagem" class="container hidden">
-        <div class="card-header">
-            <h1>Lista de Usuários</h1>
-            <p>Gerencie os usuários cadastrados no sistema.</p>
-        </div>
+            <section id="admin-cursos" class="page-section hidden">
+                <header class="section-header">
+                    <h2>Gestão de Cursos</h2>
+                    <button class="btn-secondary" onclick="document.getElementById('modal-novo-curso').classList.add('active')">
+                        <i class="ph ph-plus"></i> Novo Curso
+                    </button>
+                </header>
+                <div class="table-responsive">
+                    <table class="modern-table" id="tabela-gestao-cursos">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Área</th>
+                                <th>Carga Horária</th>
+                                <th>Modalidade</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
 
-        <div class="listagem-controles">
-            <input type="search" id="input-busca" placeholder="Buscar por nome ou email...">
-             <button class="btn btn-secundario" id="btn-logout">
-                Sair
-            </button>
-        </div>
+             <section id="admin-polos" class="page-section hidden">
+                <header class="section-header">
+                    <h2>Gestão de Polos</h2>
+                    <button class="btn-secondary" onclick="document.getElementById('modal-novo-polo').classList.add('active')">
+                        <i class="ph ph-plus"></i> Novo Polo
+                    </button>
+                </header>
+                <div class="table-responsive">
+                    <table class="modern-table" id="tabela-gestao-polos">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Cidade/UF</th>
+                                <th>Endereço</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
 
-        <div class="lista-usuarios-container">
-            <table class="tabela-usuarios">
-                <thead>
-                    <tr>
-                        <th>Nome Completo</th>
-                        <th>Email</th>
-                        <th>Endereço</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="corpo-tabela-usuarios"></tbody>
-            </table>
-            <div id="lista-vazia-mensagem" class="lista-vazia hidden">
-                <h3>Nenhum usuário encontrado</h3>
-                <p>Cadastre um novo usuário para começar.</p>
-            </div>
-        </div>
-    </main>
-    
-    <!-- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO -->
-    <div id="modal-confirmacao" class="modal">
+            <section id="admin-alunos" class="page-section hidden">
+                <header class="section-header">
+                    <h2>Lista de Alunos</h2>
+                </header>
+                <div class="table-responsive">
+                    <table class="modern-table" id="tabela-gestao-alunos">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="modal-novo-curso" class="modal">
         <div class="modal-content">
-             <div class="modal-header">
-                <h2>Confirmar Exclusão</h2>
-                <button class="btn-fechar-modal" data-target-modal="#modal-confirmacao">&times;</button>
-            </div>
-            <p>Você tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.</p>
-            <div class="modal-botoes">
-                <button type="button" class="btn btn-secundario" id="btn-cancelar-exclusao">Cancelar</button>
-                <button type="button" class="btn btn-perigo" id="btn-confirmar-exclusao">Excluir</button>
-            </div>
+            <span class="close-modal" onclick="this.parentElement.parentElement.classList.remove('active')">&times;</span>
+            <h2>Adicionar Curso</h2>
+            <form id="form-novo-curso">
+                <div class="input-group"><input type="text" name="nome" placeholder="Nome do Curso" required></div>
+                <div class="input-group"><input type="number" name="carga_horaria" placeholder="Carga Horária (h)" required></div>
+                <div class="input-group">
+                    <select name="modalidade" required>
+                        <option value="" disabled selected>Selecione a Modalidade</option>
+                        <option value="presencial">Presencial</option>
+                        <option value="online">Online</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <select name="area" required>
+                        <option value="" disabled selected>Selecione a Área</option>
+                        <option value="exatas_tech">Exatas e Tecnologia</option>
+                        <option value="biologicas_saude">Biológicas e Saúde</option>
+                        <option value="humanas_arte">Humanas e Artes</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <input type="text" name="polo_id" placeholder="ID do Polo (Opcional se online)">
+                </div>
+                <button type="submit" class="btn-primary">Salvar Curso</button>
+            </form>
         </div>
     </div>
 
-    <!-- Link para o arquivo JavaScript (caminho ajustado) -->
+    <div id="modal-novo-polo" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="this.parentElement.parentElement.classList.remove('active')">&times;</span>
+            <h2>Adicionar Polo</h2>
+            <form id="form-novo-polo">
+                <div class="input-group"><input type="text" name="nome" placeholder="Nome do Polo" required></div>
+                <div class="input-group"><input type="text" name="telefone" placeholder="Telefone" required></div>
+                <h3>Endereço</h3>
+                <div class="input-group"><input type="text" name="cep" placeholder="CEP" required></div>
+                <div class="input-group"><input type="text" name="rua" placeholder="Rua" required></div>
+                <div class="input-group"><input type="text" name="numero" placeholder="Número" required></div>
+                <div class="row">
+                    <div class="input-group"><input type="text" name="cidade" placeholder="Cidade" required></div>
+                    <div class="input-group"><input type="text" name="estado" placeholder="UF" maxlength="2" required></div>
+                </div>
+                <button type="submit" class="btn-primary">Salvar Polo</button>
+            </form>
+        </div>
+    </div>
+
     <script src="../static/js/app.js"></script>
 </body>
 </html>
-

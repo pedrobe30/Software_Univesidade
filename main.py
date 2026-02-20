@@ -2,6 +2,7 @@ from utils import *
 from sqlalchemy import *
 from tabelas import *
 from configurar_conexao import *
+import os 
 
 def criar_usuario(db_session, nome, sobrenome, email, senha, endereco):
     if not nome or not sobrenome or not email or not senha:
@@ -31,7 +32,7 @@ def criar_usuario(db_session, nome, sobrenome, email, senha, endereco):
         cep = endereco["cep"]
     )
 
-    novo_usuario = novo_endereco
+    novo_usuario.enderecos = novo_endereco
     try:
 
         db_session.add(novo_usuario)
@@ -55,8 +56,19 @@ def criar_usuario(db_session, nome, sobrenome, email, senha, endereco):
     }
 
 def login(db_session, email, senha):
-    usuario = db_session.query(Usuario).filter(Usuario.email == email).first()
+    admin_email = os.getenv("ADMIN_EMAIL", "admin@faculdadenew.com")
+    admin_code = os.getenv("ADMIN_CODE", "103208")
 
+    if email == admin_email and senha == admin_code:
+        return {
+            "id": 0,
+            "nome": "Administrador",
+            "sobrenome": "Sistema",
+            "email": email,
+            "is_admin": True 
+        }
+    
+    usuario = db_session.query(Usuario).filter(Usuario.email == email).first()
     if not usuario:
         return {"error": "Email ou Senha Invalidas"}
     
@@ -242,58 +254,110 @@ def add_curso(db_session, nome, carga_horaria, modalidade, area, polos_ids=None)
         "polos": [{"id": cp.polo.id, "nome": cp.polo.nome} for cp in novo_curso.polos]
     }
 
-def criar_matricula(db_session, user_id, id_curso, status):
-  
-    # if id_curso:
-    #     for curso_id in id_curso:
-    #         curso_existe = db_session.query(Curso).filter(Curso.id == curso_id).first()
-    #         if not curso_existe:
-    #             raise ValueError(f"Curso não encontrado")
-            
-  curso = db_session.query(Curso).filter(Curso.id == id_curso).first()
+def criar_matricula(db_session, user_id, id_curso):
 
-  if not curso:
-      raise ValueError("Curso não encontrado")
+    curso = db_session.query(Curso).filter(Curso.id == id_curso).first()
+    if not curso:
+        raise ValueError("Curso não encontrado")
 
-  matricula = db_session.query(Matricula).filter(Matricula.id == user_id, Matricula.id_curso == id_curso).first()
-  if matricula:
-    raise ValueError("Você já está cadastrado neste curso")
+
+    matricula_existente = db_session.query(Matricula).filter(
+        Matricula.id_usuario == user_id, 
+        Matricula.id_curso == id_curso
+    ).first()
     
-  try:
-    status_enum = StatusMatriculaEnum[status]
-  except KeyError:
-        raise ValueError("Status Invalida")
-  
-  usuario = db_session.query(Usuario).filter(Usuario.id == user_id).first()
+    if matricula_existente:
+        raise ValueError("Você já está matriculado neste curso.")
     
-  nova_matricula = Matricula(
-      id_usuario = user_id,
-      id_curso = id_curso,
-      status =  status_enum
+   
+    nova_matricula = Matricula(
+        id_usuario = user_id,
+        id_curso = id_curso,
+        status = StatusMatriculaEnum.ativa
     )
 
-  try:
-     db_session.add(nova_matricula)
-     db_session.commit()
-     db_session.refresh(nova_matricula)
-  except Exception as e:
-     db_session.rollback()
-     raise
+    try:
+        db_session.add(nova_matricula)
+        db_session.commit()
+        db_session.refresh(nova_matricula)
+    except Exception as e:
+        db_session.rollback()
+        raise
 
-  return {
-      "id": nova_matricula.id,
-      "usuario": {
-      "id": usuario.id,
-      "nome": usuario.nome,
-      "sobrenome": usuario.sobrenome
-      },
-      "curso": {
-      "id": curso.id,
-      "nome": curso.nome
-      },
-      "data_matricula": nova_matricula.data_matricula.isoformat(),
-      "status": nova_matricula.status.value  
-}
+    return {
+        "id": nova_matricula.id,
+        "id_curso": curso.id,
+        "nome_curso": curso.nome,
+        "data_matricula": nova_matricula.data_matricula.isoformat(),
+        "status": nova_matricula.status.value  
+    }
+
+def get_perfil_aluno(db_session, user_id):
+    usuario = db_session.query(Usuario).filter(Usuario.id == user_id).first()
+    if not usuario:
+        raise ValueError("Usuário não encontrado")
+    
+    # Busca as matrículas do aluno trazendo os dados do curso
+    matriculas = db_session.query(Matricula).filter(Matricula.id_usuario == user_id).all()
+    cursos_matriculados = []
+    
+    for mat in matriculas:
+        cursos_matriculados.append({
+            "id_matricula": mat.id,
+            "curso_nome": mat.curso.nome,
+            "modalidade": mat.curso.modalidade.value,
+            "status": mat.status.value,
+            "data": mat.data_matricula.isoformat()
+        })
+        
+    return {
+        "nome": usuario.nome,
+        "email": usuario.email,
+        "cursos": cursos_matriculados
+    }
+
+
+def deletar_curso_db(db_session, id_curso):
+    curso = db_session.query(Curso).filter(Curso.id == id_curso).first()
+    if not curso:
+        raise ValueError("Curso não encontrado")
+    db_session.delete(curso)
+    db_session.commit()
+
+def deletar_polo_db(db_session, id_polo):
+    polo = db_session.query(Polo).filter(Polo.id == id_polo).first()
+    if not polo:
+        raise ValueError("Polo não encontrado")
+    db_session.delete(polo)
+    db_session.commit()
+
+def get_alunos_matriculados(db_session, id_curso):
+    matriculas = db_session.query(Matricula).filter(
+        Matricula.id_curso == id_curso,
+        Matricula.status == StatusMatriculaEnum.ativa
+    ).all()
+    
+    alunos = []
+    for m in matriculas:
+        alunos.append({
+            "id_matricula": m.id,
+            "id_aluno": m.usuario.id,
+            "nome_aluno": f"{m.usuario.nome} {m.usuario.sobrenome}",
+            "email": m.usuario.email,
+            "data": m.data_matricula.isoformat()
+        })
+    return alunos
+
+def cancelar_matricula_admin(db_session, id_matricula):
+    matricula = db_session.query(Matricula).filter(Matricula.id == id_matricula).first()
+    if not matricula:
+        raise ValueError("Matrícula não encontrada")
+    
+    db_session.delete(matricula)
+    
+    
+    
+    db_session.commit()
     
         
 

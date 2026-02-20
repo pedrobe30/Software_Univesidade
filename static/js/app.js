@@ -1,313 +1,355 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // =================================
-    // CONFIGURAÇÃO DA API
-    // =================================
-    const API_BASE_URL = 'http://127.0.0.1:5000';
+    const API_BASE_URL = 'http://127.0.0.1:5000'; 
+    let currentUser = null;
 
-    // =================================
-    // SELETORES E ESTADO DA APLICAÇÃO
-    // =================================
-    const paginaAutenticacao = document.getElementById('pagina-autenticacao');
-    const authWrapper = document.getElementById('auth-wrapper');
-    const paginaListagem = document.getElementById('pagina-listagem');
+    // --- ELEMENTOS UI ---
+    const viewAuth = document.getElementById('view-auth');
+    const viewDashboard = document.getElementById('view-dashboard');
+    const sections = document.querySelectorAll('.page-section');
 
-    const formLogin = document.getElementById('form-login');
+    // --- FUNÇÕES AUXILIARES DE API (O segredo do sucesso!) ---
+    // Wrapper para fetch que sempre inclui credenciais (cookies)
+    async function apiFetch(endpoint, method = 'GET', body = null) {
+        const options = {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include' // <--- ESSENCIAL PARA O SESSION FUNCIONAR
+        };
+        if (body) options.body = JSON.stringify(body);
+        
+        const res = await fetch(`${API_BASE_URL}${endpoint}`, options);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erro na requisição');
+        return data;
+    }
+
+    // --- 1. LOGIN / CADASTRO / LOGOUT ---
+
     const formCadastro = document.getElementById('form-cadastro');
     
-    const signUpButton = document.getElementById('signUp');
-    const signInButton = document.getElementById('signIn');
+    if (formCadastro) {
+        formCadastro.onsubmit = async (e) => {
+            e.preventDefault(); // 1. Impede recarregar a página
+            console.log("Iniciando tentativa de cadastro..."); // Debug no console
 
-    const corpoTabelaUsuarios = document.getElementById('corpo-tabela-usuarios');
-    const listaVaziaMsg = document.getElementById('lista-vazia-mensagem');
-    const inputBusca = document.getElementById('input-busca');
+            const f = e.target;
+            const senha = document.getElementById('reg-senha').value;
+            const confirmacao = document.getElementById('reg-conf-senha').value;
 
-    const modalConfirmacao = document.getElementById('modal-confirmacao');
-    const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao');
-    
-    let usuarios = [];
-    let currentUser = null;
-    let usuarioParaExcluirId = null;
-
-    // =================================
-    // FUNÇÕES DE UTILIDADE E FORMATAÇÃO
-    // =================================
-    function formatarInputNumerico(e) {
-        e.target.value = e.target.value.replace(/[^0-9]/g, '');
-    }
-
-    // =================================
-    // FUNÇÕES DE VALIDAÇÃO
-    // =================================
-    function mostrarErro(input, mensagem) {
-        const formGrupo = input.closest('.form-grupo');
-        const errorDiv = formGrupo.querySelector('.error-message');
-        errorDiv.textContent = mensagem;
-        errorDiv.style.display = 'block';
-        input.setAttribute('aria-invalid', 'true');
-    }
-
-    function limparErro(input) {
-        const formGrupo = input.closest('.form-grupo');
-        const errorDiv = formGrupo.querySelector('.error-message');
-        errorDiv.style.display = 'none';
-        input.removeAttribute('aria-invalid');
-    }
-
-     function limparTodosErros(form) {
-        const inputs = form.querySelectorAll('input');
-        inputs.forEach(limparErro);
-        const generalError = form.querySelector('.general-error');
-        if (generalError) generalError.style.display = 'none';
-    }
-    
-    function validarFormulario(form) {
-        let ehValido = true;
-        const inputs = form.querySelectorAll('input[required]');
-        
-        limparTodosErros(form);
-
-        inputs.forEach(input => {
-            if (!input.value.trim()) {
-                mostrarErro(input, `O campo ${input.placeholder.replace(' *', '')} é obrigatório.`);
-                ehValido = false;
-            } else if (input.type === 'email' && !/\S+@\S+\.\S+/.test(input.value)) {
-                mostrarErro(input, 'Por favor, insira um email válido.');
-                ehValido = false;
+            // 2. Validação de Senha no Frontend
+            if (senha !== confirmacao) {
+                alert("As senhas não coincidem!");
+                return; // Para tudo se a senha estiver errada
             }
-        });
-        
-        if (form.id === 'form-cadastro') {
-            const senha = form.querySelector('#senha');
-            const confirmarSenha = form.querySelector('#confirmar-senha');
-            if (senha.value && confirmarSenha.value && senha.value !== confirmarSenha.value) {
-                mostrarErro(confirmarSenha, 'As senhas não coincidem.');
-                ehValido = false;
-            }
-        }
-        
-        return ehValido;
-    }
 
-    // =================================
-    // FUNÇÕES DE NAVEGAÇÃO, MODAIS E SLIDE
-    // =================================
-    function navegarPara(pagina) {
-        if (pagina === 'autenticacao') {
-            paginaAutenticacao.classList.remove('hidden');
-            paginaListagem.classList.add('hidden');
-            currentUser = null;
-        } else { // 'listagem'
-            paginaAutenticacao.classList.add('hidden');
-            paginaListagem.classList.remove('hidden');
-            fetchErenderizarUsuarios();
-        }
-    }
-    
-    function controlarModal(modalSeletor, abrir = true) {
-        const modal = document.querySelector(modalSeletor);
-        if (abrir) {
-            modal.classList.add('ativo');
-        } else {
-            modal.classList.remove('ativo');
-        }
-    }
+            // 3. Montagem do Objeto (Payload) conforme o Backend espera
+            // IMPORTANTE: Converter 'numero' para Inteiro com parseInt()
+            const payload = {
+                nome: f.nome.value,
+                sobrenome: f.sobrenome.value,
+                email: f.email.value,
+                senha: senha,
+                endereco: {
+                    cep: f.cep.value,
+                    rua: f.rua.value,
+                    numero: parseInt(f.numero.value) || 0 // Converte para int, ou 0 se vazio
+                }
+            };
 
-    // =================================
-    // FUNÇÕES DE API
-    // =================================
-    async function realizarLogin(e) {
-        e.preventDefault();
-        if (!validarFormulario(formLogin)) return;
+            console.log("Payload enviado:", payload); // Mostra o que está sendo enviado
 
-        const formData = new FormData(formLogin);
-        const email = formData.get('email');
-        const senha = formData.get('senha');
+            try {
+                // Usa a função apiFetch que criamos (ou fetch padrão com headers)
+                const res = await fetch(`${API_BASE_URL}/usuarios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, senha }),
-                credentials: 'include' // IMPORTANTE: Envia os cookies da sessão
-            });
+                const data = await res.json();
 
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || 'Erro ao fazer login');
-            }
-            
-            currentUser = data;
-            navegarPara('listagem');
+                if (!res.ok) {
+                    throw new Error(data.error || "Erro desconhecido no servidor");
+                }
 
-        } catch (error) {
-            const generalError = formLogin.querySelector('.general-error');
-            generalError.textContent = error.message;
-            generalError.style.display = 'block';
-        }
-    }
+                // Sucesso!
+                alert("Conta criada com sucesso! Faça login.");
+                f.reset(); // Limpa o formulário
+                
+                // Troca para a tela de login automaticamente
+                document.querySelector('.sign-up').classList.add('hidden');
+                document.querySelector('.sign-in').classList.remove('hidden');
 
-    async function cadastrarUsuario(e) {
-        e.preventDefault();
-        if (!validarFormulario(formCadastro)) return;
-        
-        const formData = new FormData(formCadastro);
-        
-        const novoUsuario = {
-            nome: formData.get('nome'),
-            sobrenome: formData.get('sobrenome'),
-            email: formData.get('email'),
-            senha: formData.get('senha'),
-            endereco: {
-                rua: formData.get('rua'),
-                numero: formData.get('numero'),
-                cep: formData.get('cep')
+            } catch (err) {
+                console.error("Erro no cadastro:", err);
+                alert("Erro ao cadastrar: " + err.message);
             }
         };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/usuarios`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(novoUsuario),
-                credentials: 'include' // IMPORTANTE: Envia os cookies da sessão
-            });
-
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || 'Erro ao cadastrar usuário');
-            }
-
-            formCadastro.reset();
-            alert('Cadastro realizado com sucesso! Por favor, faça o login.');
-            signInButton.click(); // Muda para a tela de login
-
-        } catch (error) {
-            const emailInput = formCadastro.querySelector('#email');
-            mostrarErro(emailInput, error.message);
-        }
     }
     
-    async function fetchErenderizarUsuarios() {
+    document.getElementById('form-login').onsubmit = async (e) => {
+        e.preventDefault();
         try {
-            const response = await fetch(`${API_BASE_URL}/cadastrados`, {
-                credentials: 'include' // IMPORTANTE: Envia os cookies da sessão
-            });
-            if (!response.ok) {
-                throw new Error('Não foi possível carregar os usuários.');
-            }
-            usuarios = await response.json();
-            renderizarListaUsuarios();
-        } catch (error) {
-            console.error(error);
-            listaVaziaMsg.querySelector('h3').textContent = 'Erro ao carregar usuários';
-            listaVaziaMsg.querySelector('p').textContent = 'Tente novamente mais tarde.';
-            listaVaziaMsg.classList.remove('hidden');
-            corpoTabelaUsuarios.parentElement.classList.add('hidden');
-        }
-    }
-    
-    async function excluirUsuario() {
-        if (!usuarioParaExcluirId) return;
+            const formData = Object.fromEntries(new FormData(e.target));
+            const user = await apiFetch('/login', 'POST', formData);
+            loginSuccess(user);
+        } catch (err) { alert(err.message); }
+    };
 
+    document.getElementById('btn-logout').onclick = async () => {
+        await apiFetch('/logout', 'POST');
+        location.reload();
+    };
+
+    document.getElementById('btn-deletar-conta').onclick = async () => {
+        if(!confirm("Tem certeza que deseja apagar sua conta?")) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/deletar/${usuarioParaExcluirId}`, {
-                method: 'DELETE',
-                credentials: 'include' // IMPORTANTE: Envia os cookies da sessão
-            });
-            
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || "Erro ao excluir conta.");
-            }
-            
-            alert(data.mensagem || "Usuário deletado com sucesso.");
-            controlarModal('#modal-confirmacao', false);
-            navegarPara('autenticacao'); // Desloga o usuário
+            await apiFetch('/deletar/conta', 'DELETE');
+            alert("Conta excluída.");
+            location.reload();
+        } catch (err) { alert("Erro ao excluir: " + err.message); }
+    };
 
-        } catch(error) {
-            alert(error.message);
-            controlarModal('#modal-confirmacao', false);
-        }
-    }
+    // --- 2. LOGICA DO DASHBOARD ---
 
+    function loginSuccess(user) {
+        currentUser = user;
+        viewAuth.classList.add('hidden');
+        viewDashboard.classList.remove('hidden');
 
-    // =================================
-    // FUNÇÕES DE RENDERIZAÇÃO
-    // =================================
-    function renderizarListaUsuarios() {
-        corpoTabelaUsuarios.innerHTML = '';
-        const termoBusca = inputBusca.value.toLowerCase();
+        // UI Header
+        document.getElementById('display-name').textContent = user.is_admin ? "Administrador" : `${user.nome} ${user.sobrenome}`;
+        document.getElementById('display-role').textContent = user.is_admin ? "Gestão Acadêmica" : "Estudante";
         
-        const usuariosFiltrados = usuarios.filter(u => 
-            (u.nome && u.nome.toLowerCase().includes(termoBusca)) || 
-            (u.email && u.email.toLowerCase().includes(termoBusca))
-        );
+        // Menu Toggle
+        document.querySelectorAll('.menu-item').forEach(m => m.classList.add('hidden'));
+        const role = user.is_admin ? 'admin' : 'aluno';
+        const menus = user.is_admin 
+            ? ['menu-admin-cursos', 'menu-admin-polos'] 
+            : ['menu-aluno-home', 'menu-aluno-perfil'];
+        
+        menus.forEach(id => document.getElementById(id).classList.remove('hidden'));
+        
+        // Navegar para primeira tela
+        navigateTo(user.is_admin ? 'admin-cursos' : 'aluno-home');
+    }
 
-        listaVaziaMsg.classList.toggle('hidden', usuariosFiltrados.length > 0);
-        corpoTabelaUsuarios.parentElement.classList.toggle('hidden', usuariosFiltrados.length === 0);
-
-        usuariosFiltrados.forEach(usuario => {
-            const tr = document.createElement('tr');
-            const isCurrentUser = currentUser && currentUser.id === usuario.id;
-            
-            const endereco = usuario.endereco && usuario.endereco.rua ? `${usuario.endereco.rua}, ${usuario.endereco.numero}` : 'Não informado';
-
-            tr.innerHTML = `
-                <td>${usuario.nome} ${usuario.sobrenome}</td>
-                <td>${usuario.email}</td>
-                <td>${endereco}</td>
-                <td class="acoes-usuario">
-                    ${isCurrentUser ? `<button class="btn btn-excluir" data-id="${usuario.id}">Excluir</button>` : ''}
-                </td>
-            `;
-            corpoTabelaUsuarios.appendChild(tr);
+    // Navegação Sidebar
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateTo(item.dataset.target);
         });
+    });
+
+    function navigateTo(targetId) {
+        sections.forEach(s => s.classList.add('hidden'));
+        const target = document.getElementById(targetId);
+        if (target) {
+            target.classList.remove('hidden');
+            carregarDadosSecao(targetId);
+        }
+    }
+
+    // --- 3. CARREGAMENTO DE DADOS ---
+
+    async function carregarDadosSecao(id) {
+        try {
+            if(id === 'aluno-home') {
+                const cursos = await apiFetch('/cursos'); // GET público
+                renderVitrine(cursos);
+            }
+            if(id === 'aluno-perfil') {
+                const perfil = await apiFetch('/perfil');
+                renderPerfil(perfil);
+            }
+            if(id === 'admin-cursos') {
+                const cursos = await apiFetch('/cursos');
+                renderTabelaAdminCursos(cursos);
+            }
+            if(id === 'admin-polos') {
+                const polos = await apiFetch('/polos');
+                renderTabelaAdminPolos(polos);
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    // --- RENDERIZADORES ALUNO ---
+
+    function renderVitrine(cursos) {
+        const grid = document.getElementById('grid-cursos');
+        grid.innerHTML = cursos.map(c => `
+            <div class="card-curso">
+                <h3>${c.nome}</h3>
+                <p>${c.area} - ${c.carga_horaria}h (${c.modalidade})</p>
+                <button onclick="fazerMatricula(${c.id})" class="btn-primary">Matricular-se</button>
+            </div>
+        `).join('');
+    }
+
+    window.fazerMatricula = async (id) => {
+        if(!confirm("Confirmar matrícula?")) return;
+        try {
+            await apiFetch('/matricula', 'POST', { id_curso: id });
+            alert("Matrícula realizada!");
+            navigateTo('aluno-perfil');
+        } catch(e) { alert(e.message); }
+    };
+
+    function renderPerfil(perfil) {
+        const tbody = document.getElementById('tabela-minhas-matriculas');
+        if(!perfil.cursos.length) {
+            tbody.innerHTML = '<tr><td colspan="4">Nenhuma matrícula.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = perfil.cursos.map(c => `
+            <tr>
+                <td>${c.curso_nome}</td>
+                <td>${c.modalidade}</td>
+                <td>${c.status}</td>
+                <td>${new Date(c.data).toLocaleDateString()}</td>
+            </tr>
+        `).join('');
+    }
+
+    // --- RENDERIZADORES ADMIN (COM EDIT/DELETE/ALUNOS) ---
+
+    function renderTabelaAdminCursos(cursos) {
+        const tbody = document.getElementById('tabela-gestao-cursos').querySelector('tbody');
+        tbody.innerHTML = cursos.map(c => `
+            <tr>
+                <td>${c.id}</td>
+                <td>${c.nome}</td>
+                <td>${c.modalidade}</td>
+                <td>
+                    <button class="btn-secondary" onclick="verAlunosCurso(${c.id}, '${c.nome}')">Ver Alunos</button>
+                    <button class="btn-danger-sm" onclick="deletarItem('cursos', ${c.id})">Excluir</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderTabelaAdminPolos(polos) {
+        const tbody = document.getElementById('tabela-gestao-polos').querySelector('tbody');
+        tbody.innerHTML = polos.map(p => `
+            <tr>
+                <td>${p.nome}</td>
+                <td>${p.endereco.cidade}</td>
+                <td>
+                    <button class="btn-danger-sm" onclick="deletarItem('polos', ${p.id})">Excluir</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // --- AÇÕES DO ADMIN ---
+
+    window.deletarItem = async (tipo, id) => {
+        if(!confirm("Tem certeza? Isso pode afetar dados vinculados!")) return;
+        try {
+            await apiFetch(`/${tipo}/${id}`, 'DELETE');
+            alert("Item deletado.");
+            carregarDadosSecao(`admin-${tipo}`); // Recarrega a tabela
+        } catch(e) { alert(e.message); }
+    };
+
+    window.verAlunosCurso = async (idCurso, nomeCurso) => {
+        try {
+            const alunos = await apiFetch(`/admin/curso/${idCurso}/alunos`);
+            let msg = `Alunos em ${nomeCurso}:\n\n`;
+            if(alunos.length === 0) msg += "Nenhum aluno matriculado.";
+            
+        
+            alert(msg + alunos.map(a => `- ${a.nome_aluno} (${a.email})`).join('\n'));
+            
+            
+        } catch(e) { alert(e.message); }
+    };
+
+    // Cadastro de Polo
+    const formPolo = document.getElementById('form-novo-polo');
+    if(formPolo) {
+        formPolo.onsubmit = async (e) => {
+            e.preventDefault(); // Impede o recarregamento da página
+            const f = e.target;
+            
+            const payload = {
+                nome: f.nome.value,
+                telefone: f.telefone.value,
+                endereco: {
+                    cep: f.cep.value, 
+                    rua: f.rua.value, 
+                    numero: parseInt(f.numero.value), // Convertendo para número
+                    cidade: f.cidade.value, 
+                    estado: f.estado.value
+                }
+            };
+
+            console.log("Enviando Polo:", payload); // Para debug
+
+            try { 
+                await apiFetch('/polos', 'POST', payload); 
+                alert("Polo salvo com sucesso!");
+                
+                // Limpa o form e fecha o modal SEM recarregar a página
+                f.reset();
+                document.getElementById('modal-novo-polo').classList.remove('active');
+                
+                // Atualiza apenas a tabela na tela
+                carregarDadosSecao('admin-polos');
+            }
+            catch(err) { 
+                console.error(err);
+                alert("Erro ao salvar polo: " + err.message); 
+            }
+        };
+    }
+
+    // Cadastro de Curso
+    const formCurso = document.getElementById('form-novo-curso');
+    if(formCurso) {
+        formCurso.onsubmit = async (e) => {
+            e.preventDefault(); // Impede o recarregamento da página
+            const f = e.target;
+            
+            // Lógica para tratar o Polo ID (se estiver vazio, manda lista vazia)
+            let polosIds = [];
+            if (f.polo_id && f.polo_id.value.trim() !== "") {
+                polosIds.push(parseInt(f.polo_id.value));
+            }
+
+            const payload = {
+                nome: f.nome.value,
+                carga_horaria: parseInt(f.carga_horaria.value), // Importante: Converter para Int
+                modalidade: f.modalidade.value,
+                area: f.area.value, // Deve bater com o Enum do Python
+                polos_ids: polosIds
+            };
+
+            console.log("Enviando Curso:", payload); // OLHE NO CONSOLE SE DER ERRO
+
+            try {
+                await apiFetch('/cursos', 'POST', payload);
+                alert("Curso salvo com sucesso!");
+                
+                f.reset();
+                document.getElementById('modal-novo-curso').classList.remove('active');
+                carregarDadosSecao('admin-cursos');
+            } 
+            catch(err) { 
+                console.error(err);
+                alert("Erro ao salvar curso: " + err.message); 
+            }
+        };
     }
     
-    // =================================
-    // EVENT LISTENERS
-    // =================================
-    signUpButton.addEventListener('click', () => {
-        authWrapper.classList.add('right-panel-active');
-        limparTodosErros(formLogin);
-    });
-
-    signInButton.addEventListener('click', () => {
-        authWrapper.classList.remove('right-panel-active');
-        limparTodosErros(formCadastro);
-    });
-
-    document.getElementById('btn-logout').addEventListener('click', () => {
-        navegarPara('autenticacao');
-        if(authWrapper.classList.contains('right-panel-active')) {
-            authWrapper.classList.remove('right-panel-active');
-        }
-    });
-    
-    formCadastro.querySelector('#numero').addEventListener('input', formatarInputNumerico);
-    formCadastro.querySelector('#cep').addEventListener('input', formatarInputNumerico);
-    
-    formLogin.addEventListener('submit', realizarLogin);
-    formCadastro.addEventListener('submit', cadastrarUsuario);
-    inputBusca.addEventListener('input', renderizarListaUsuarios);
-    
-    corpoTabelaUsuarios.addEventListener('click', (e) => {
-        const target = e.target.closest('button');
-        if (!target || !target.classList.contains('btn-excluir')) return;
-
-        usuarioParaExcluirId = target.dataset.id;
-        controlarModal('#modal-confirmacao', true);
-    });
-    
-    btnConfirmarExclusao.addEventListener('click', excluirUsuario);
-
-    document.querySelectorAll('.btn-fechar-modal, #btn-cancelar-exclusao').forEach(el => {
-        el.addEventListener('click', () => controlarModal('#modal-confirmacao', false));
-    });
-    
-    // =================================
-    // INICIALIZAÇÃO
-    // =================================
-    navegarPara('autenticacao');
+    // Configurações iniciais
+    document.getElementById('btn-ir-cadastro').onclick = () => {
+        document.querySelector('.sign-in').classList.add('hidden');
+        document.querySelector('.sign-up').classList.remove('hidden');
+    };
+    document.getElementById('btn-ir-login').onclick = () => {
+        document.querySelector('.sign-up').classList.add('hidden');
+        document.querySelector('.sign-in').classList.remove('hidden');
+    };
 });
-
