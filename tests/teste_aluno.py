@@ -21,10 +21,10 @@ email_teste = f"aluno_new_{id_unico}@teste.com"
 senha_teste = "senhaSegura123"
 
 def lidar_com_alertas_pendentes(driver):
-    """Função auxiliar para fechar alertas inesperados antes de tirar print"""
+    
     try:
         alert = driver.switch_to.alert
-        print(f"⚠️ Fechando alerta inesperado: {alert.text}")
+        print(f"Fechando alerta inesperado: {alert.text}")
         alert.accept()
     except:
         pass
@@ -34,7 +34,7 @@ try:
     driver.get(SITE_URL)
     wait = WebDriverWait(driver, 15)
 
-    print("2. Trocando para o painel de Cadastro...")
+    print("2. Trocando para Cadastro")
     wait.until(EC.element_to_be_clickable((By.ID, "btn-ir-cadastro"))).click()
 
     print(f"3. Preenchendo dados do novo aluno ({email_teste})...")
@@ -57,7 +57,7 @@ try:
     assert "sucesso" in alerta_sucesso.text.lower()
     alerta_sucesso.accept() 
 
-    print("5. Realizando Login com a conta recém-criada...")
+    print("5. Realizando Login com a conta recém-criada")
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "#form-login input[name='email']"))).send_keys(email_teste)
     driver.find_element(By.CSS_SELECTOR, "#form-login input[name='senha']").send_keys(senha_teste)
     driver.find_element(By.CSS_SELECTOR, "#form-login .btn-primary").click()
@@ -69,36 +69,58 @@ try:
         time.sleep(1)
         btn_matricular.click()
         
-        print("7. Confirmando a matrícula...")
+        print("7. Confirmando a matrícula")
         wait.until(EC.alert_is_present())
-        driver.switch_to.alert.accept() # Aceita a pergunta: "Confirmar matrícula?"
+        driver.switch_to.alert.accept() 
         
-        # AGORA O ROBÔ VAI LER O SEGUNDO ALERTA!
+       
         wait.until(EC.alert_is_present())
         alerta_resultado = driver.switch_to.alert
         mensagem = alerta_resultado.text
         alerta_resultado.accept()
         
-        # Se a mensagem for o erro "Faça login", o teste quebra na hora aqui:
-        assert "realizada" in mensagem.lower(), f"❌ ERRO DO BACKEND: {mensagem}"
+       
+        assert "realizada" in mensagem.lower(), f"ERRO DO BACKEND: {mensagem}"
 
         print("8. Verificando se o curso apareceu no Perfil do Aluno...")
         tabela_matriculas = wait.until(EC.visibility_of_element_located((By.ID, "tabela-minhas-matriculas")))
         assert "Nenhuma matrícula" not in tabela_matriculas.text
         
-        print("✅ TESTE E2E COMPLETO PASSOU (E DE VERDADE DESSA VEZ)!")
+       
+        print("9. Limpando o banco de dados: Excluindo a conta de teste")
+        
+      
+        btn_deletar = wait.until(EC.element_to_be_clickable((By.ID, "btn-deletar-conta")))
+        
+        
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn_deletar)
+        time.sleep(1) 
+        btn_deletar.click()
+
+        print("10. Confirmando os alertas de exclusão...")
+  
+        wait.until(EC.alert_is_present())
+        driver.switch_to.alert.accept() 
+
+ 
+        wait.until(EC.alert_is_present())
+        alerta_exclusao = driver.switch_to.alert
+        assert "excluída" in alerta_exclusao.text.lower()
+        alerta_exclusao.accept()
+        
+        print("TESTE E2E COMPLETO PASSOU! Sucesso no teste.")
 
     except Exception as e:
-        print(f"❌ O TESTE FALHOU NA MATRÍCULA: {e}")
+        print(f"O TESTE FALHOU NA MATRÍCULA OU EXCLUSÃO: {e}")
        
 
 except UnexpectedAlertPresentException as e:
-    print(f"❌ UM ALERTA INESPERADO BLOQUEOU O TESTE: {e.alert_text}")
+    print(f"UM ALERTA INESPERADO BLOQUEOU O TESTE: {e.alert_text}")
     lidar_com_alertas_pendentes(driver)
    
 
 except Exception as e:
-    print(f"❌ O TESTE FALHOU DEVIDO A UM ERRO NÃO TRATADO: {e}")
+    print(f"O TESTE FALHOU DEVIDO A UM ERRO NÃO TRATADO: {e}")
     lidar_com_alertas_pendentes(driver)
    
 
